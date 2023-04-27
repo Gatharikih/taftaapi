@@ -2,7 +2,6 @@ package org.tafta.taftaapi.http;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
-import org.sla.globalapi.utility.ConvertTo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
@@ -11,6 +10,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
+import org.tafta.taftaapi.utility.ConvertTo;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
