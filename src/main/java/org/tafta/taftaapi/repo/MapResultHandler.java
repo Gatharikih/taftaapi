@@ -3,7 +3,7 @@ package org.tafta.taftaapi.repo;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.util.*;
-import org.sla.pegpayapi.repo.DBFunctionImpl;
+import org.tafta.taftaapi.repo.DBFunctionImpl;
 
 /**
  * @author Gathariki Ngigi
