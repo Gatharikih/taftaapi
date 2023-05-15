@@ -231,4 +231,19 @@ public class DBFunctionImpl implements DBFunction {
     }
     // </editor-fold>
     //
+    // <editor-fold default-state="collapsed" desc="searchUserByEmailOrPhoneNumber(String searchTerm)">
+    @Override
+    public Map<String, Object> searchUserByEmailOrPhoneNumber(String searchTerm) {
+        LinkedHashMap<String, Object> param = new LinkedHashMap<>();
+        String sql = "SELECT id FROM users WHERE email=:email OR msisdn=:msisdn LIMIT 1";
+
+        param.put("email", searchTerm);
+        param.put("msisdn", searchTerm);
+
+        List<Map<String, Object>> user = NamedBaseExecute(sql, param, null, new MapResultHandler());
+
+        return user.size() > 0 ? user.get(0) : null;
+    }
+    // </editor-fold>
+    //
 }

@@ -56,4 +56,22 @@ public class UserService {
             }
         }
     }
+    public Map<String, Object> searchUserByEmailOrPhoneNumber(String searchTerm){
+        Map<String, Object> searchUserResponse = dbFunction.searchUserByEmailOrPhoneNumber(searchTerm);
+
+        if(searchUserResponse.size() > 0){
+            return new HashMap<>() {{
+                put("response_code", "200");
+                put("description", "Success");
+                put("data", searchUserResponse);
+            }};
+        }else{
+            return new HashMap<>() {{
+                put("response_code", "404");
+                put("description", "User not found");
+                put("data", null);
+            }};
+        }
+    }
+
 }

@@ -13,4 +13,5 @@ public interface DBFunction {
     List<Map<String, Object>> createUser(Map<String, Object> entryParams);
     List<Map<String, Object>> updateUser(Map<String, Object> entryParams);
     List<Map<String, Object>> getUserRoleId(String roleName);
+    Map<String, Object> searchUserByEmailOrPhoneNumber(String searchTerm);
 }

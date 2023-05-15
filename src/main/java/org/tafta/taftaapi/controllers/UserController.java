@@ -30,15 +30,18 @@ public class UserController {
 
     // query param - scope(one, all), page(default = 1), per_page(default = 10), search, order(default = desc), orderby(default = date)
     @RequestMapping(value ="/api/v1/users", method = RequestMethod.GET)
-    public ResponseEntity<Object> searchUser(@RequestParam("email") String email) {
-        Boolean isEmailValid = dataValidation.isEmailValid(email);
+    public ResponseEntity<Object> searchUser(@RequestParam("search_term") String searchTerm) {
+        if (!searchTerm.isEmpty()) {
+            Map<String, Object> searchUserResponse = userService.searchUserByEmailOrPhoneNumber(searchTerm);
 
-        log.error("isEmailValid : " + isEmailValid);
-        ResponseEntity.status(200).body(new HashMap<>(){{
-            put("is_email_valid", isEmailValid.toString());
-        }});
-
-        return null;
+            return ResponseEntity.status(Integer.parseInt(searchUserResponse.get("response_code").toString())).body(searchUserResponse);
+        } else {
+            return ResponseEntity.status(404).body(new HashMap<>() {{
+                put("response_code", "404");
+                put("description", "Success");
+                put("data", null);
+            }});
+        }
     }
 
     @RequestMapping(value ="/api/v1/users", method = RequestMethod.PUT)
