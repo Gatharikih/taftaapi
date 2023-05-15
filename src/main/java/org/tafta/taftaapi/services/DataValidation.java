@@ -25,14 +25,12 @@ public class DataValidation {
     final String validationErrCode = "041400";
 
     public boolean isEmailValid(String emailAddress) {
-//        String regexPattern = "^(.+)@(.+)[.]\\\\S{2,}(.+)$";
         String regexPattern = "^(\\w+)[@](\\w+)[.]([a-zA-Z_][a-zA-Z0-9_]*)$";
 
         Pattern pattern = Pattern.compile(regexPattern);
         Matcher matcher = pattern.matcher(emailAddress.trim());
 
         return matcher.matches();
-//        return emailAddress.matches(regexPattern);
     }
 
     public Map<String, Object> areFieldsValid(Map<String, Object> fieldsMap, List<String> requiredFields){
@@ -68,7 +66,7 @@ public class DataValidation {
                 fieldName = firstStr;
             }
 
-            if (Optional.ofNullable(fieldsMap.get(eachRequiredField)).orElse("").toString().isEmpty()) {
+            if (Optional.ofNullable(fieldsMap.get(eachRequiredField)).orElse("").toString().isEmpty() || fieldsMap.get(eachRequiredField) == null) {
                 errors.add(Errors.get(validationErrCode, fieldName + " cannot be null/empty"));
 
                 response.put("valid", "false");
@@ -76,13 +74,11 @@ public class DataValidation {
 
                 break;
             }else{
-                // check email format
-                log.error(eachRequiredField + " : " +
-                        eachRequiredField.equalsIgnoreCase("email") + " - " + fieldsMap.get(eachRequiredField).toString() + " : " +
-                        isEmailValid(fieldsMap.get(eachRequiredField).toString()));
-
-                if(fieldsMap.get(eachRequiredField).toString().equalsIgnoreCase("email")){
+                if(eachRequiredField.equalsIgnoreCase("email")){
+                    // check email format
                     if(!isEmailValid(fieldsMap.get(eachRequiredField).toString())){
+                        errors.add(Errors.get(validationErrCode, "Email is in wrong format"));
+
                         response.put("valid", "false");
                         response.put("errors", Errors.get(validationErrCode, "Email is in wrong format"));
                     }

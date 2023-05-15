@@ -144,9 +144,9 @@ public class DBFunctionImpl implements DBFunction {
     }
     // </editor-fold>
     //
-    // <editor-fold default-state="collapsed" desc="createOrUpdateUser(Map<String, Object> entryParams)">
+    // <editor-fold default-state="collapsed" desc="createUser(Map<String, Object> entryParams)">
     @Override
-    public List<Map<String, Object>> createOrUpdateUser(Map<String, Object> entryParams) {
+    public List<Map<String, Object>> createUser(Map<String, Object> entryParams) {
         LinkedHashMap<String, Object> params = new LinkedHashMap<>();
 
         params.put("company_id", entryParams.get("company_id"));
@@ -165,18 +165,46 @@ public class DBFunctionImpl implements DBFunction {
 
         String sql;
         String table = "users";
-        String id = "id";
 
-        if (params.getOrDefault(id, null) == null) {
-            params.remove(id);
+        sql = Models.InsertString(table, params);
+        sql += " returning *";
 
-            sql = Models.InsertString(table, params);
-        } else {
-            where_params.put("email", params.get("email"));
-            where_params.put("msisdn", params.get("msisdn"));
+        List<Map<String, Object>> results = NamedBaseExecute(sql, params, where_params, new MapResultHandler());
 
-            sql = Models.UpdateString(table, params, where_params);
+        if(results.size() > 0){
+            return results;
         }
+
+        return null;
+    }
+    // </editor-fold>
+    //
+    // <editor-fold default-state="collapsed" desc="updateUser(Map<String, Object> entryParams)">
+    @Override
+    public List<Map<String, Object>> updateUser(Map<String, Object> entryParams) {
+        LinkedHashMap<String, Object> params = new LinkedHashMap<>();
+
+        params.put("company_id", entryParams.get("company_id"));
+        params.put("role_id", Optional.ofNullable(entryParams.get("role_id"))
+                .orElse(getUserRoleId("user").size() > 0 ? Integer.parseInt(getUserRoleId("user").get(0).get("id").toString()) : 5));
+        params.put("fullname", entryParams.get("fullname"));
+        params.put("email", entryParams.get("email"));
+        params.put("password", entryParams.get("password"));
+        params.put("msisdn", entryParams.get("msisdn"));
+        params.put("status", Optional.ofNullable(entryParams.get("status")).orElse("active"));
+        params.put("reset_password", Optional.ofNullable(entryParams.get("reset_password")).orElse(true));
+
+        params = cleanMap(params);
+
+        LinkedHashMap<String, Object> where_params = new LinkedHashMap<>();
+
+        String sql;
+        String table = "users";
+
+        where_params.put("email", params.get("email"));
+        where_params.put("msisdn", params.get("msisdn"));
+
+        sql = Models.UpdateString(table, params, where_params);
 
         sql += " returning *";
 

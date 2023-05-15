@@ -7,10 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import org.tafta.taftaapi.services.DataValidation;
 import org.tafta.taftaapi.services.UserService;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author Gathariki Ngigi
@@ -44,8 +41,8 @@ public class UserController {
         return null;
     }
 
-    @RequestMapping(value ="/api/v1/users", method = {RequestMethod.POST, RequestMethod.PUT})
-    public ResponseEntity<Object> createOrUpdateUser(@RequestBody Map<String, Object> body) {
+    @RequestMapping(value ="/api/v1/users", method = RequestMethod.PUT)
+    public ResponseEntity<Object> updateUser(@RequestHeader Map<String, Object> headers, @RequestBody Map<String, Object> body) {
         Map<String, Object> response = new HashMap<>();
 
         try {
@@ -58,10 +55,10 @@ public class UserController {
             Map<String, Object> dataValidationResult = dataValidation.areFieldsValid(body, requiredFields);
 
             if (Boolean.parseBoolean(dataValidationResult.get("valid").toString())) {
-                Map<String, Object> createOrUpdateUserResponse = userService.createOrUpdateUser(body);
+                Map<String, Object> updateUserResponse = userService.createOrUpdateUser(body, "update");
 
-                return ResponseEntity.status(Integer.parseInt(createOrUpdateUserResponse.get("response_code").toString()))
-                        .body(createOrUpdateUserResponse);
+                return ResponseEntity.status(Integer.parseInt(updateUserResponse.get("response_code").toString()))
+                        .body(updateUserResponse);
             } else {
                 Map validationErrorMap = (Map) dataValidationResult.get("errors");
 
@@ -74,15 +71,74 @@ public class UserController {
         } catch (Exception e) {
             e.printStackTrace();
 
-            response.put("response_code", "500");
-            response.put("description", "Failed");
-            response.put("errors",  List.of(new HashMap<>(){{
-                put("description", "Internal error occurred");
-            }}));
+            if (e.getCause().getMessage().contains("duplicate key") || e.getCause().getMessage().contains("unique constraint")){
+                response.put("response_code", "400");
+                response.put("description", "Failed");
+                response.put("errors", List.of(new HashMap<>() {{
+                    put("description", "Email/phone number already exists");
+                }}));
+            }else {
+                response.put("response_code", "500");
+                response.put("description", "Failed");
+                response.put("errors", List.of(new HashMap<>() {{
+                    put("description", "Internal error occurred");
+                }}));
+            }
 
-            return ResponseEntity.status(500).body(response);
+            return ResponseEntity.status(Integer.parseInt(response.get("response_code").toString()))
+                    .body(response);
         }
     }
+
+    @RequestMapping(value ="/api/v1/users", method = RequestMethod.POST)
+    public ResponseEntity<Object> createUser(@RequestHeader Map<String, Object> headers, @RequestBody Map<String, Object> body) {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            List<String> requiredFields = new ArrayList<>();
+
+            requiredFields.add("fullname");
+            requiredFields.add("email");
+            requiredFields.add("msisdn");
+
+            Map<String, Object> dataValidationResult = dataValidation.areFieldsValid(body, requiredFields);
+
+            if (Boolean.parseBoolean(dataValidationResult.get("valid").toString())) {
+                Map<String, Object> createUserResponse = userService.createOrUpdateUser(body, "create");
+
+                return ResponseEntity.status(Integer.parseInt(createUserResponse.get("response_code").toString()))
+                        .body(createUserResponse);
+            } else {
+                Map validationErrorMap = (Map) dataValidationResult.get("errors");
+
+                response.put("response_code", "400");
+                response.put("description", "Failed");
+                response.put("errors", List.of(validationErrorMap.get("message")));
+
+                return ResponseEntity.status(400).body(response);
+            }
+        } catch (Exception e) {
+//            e.printStackTrace();
+
+            if (e.getCause().getMessage().contains("duplicate key") || e.getCause().getMessage().contains("unique constraint")){
+                response.put("response_code", "400");
+                response.put("description", "Failed");
+                response.put("errors", List.of(new HashMap<>() {{
+                    put("description", "Email/phone number already exists");
+                }}));
+            }else {
+                response.put("response_code", "500");
+                response.put("description", "Failed");
+                response.put("errors", List.of(new HashMap<>() {{
+                    put("description", "Internal error occurred");
+                }}));
+            }
+
+            return ResponseEntity.status(Integer.parseInt(response.get("response_code").toString()))
+                    .body(response);
+        }
+    }
+
     @RequestMapping(value ="/api/v1/users/{user_id}", method = RequestMethod.PUT)
     public ResponseEntity<Object> updateUser() {
         return null;
