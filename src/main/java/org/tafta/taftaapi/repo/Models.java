@@ -12,27 +12,26 @@ import java.util.regex.Pattern;
  * Time 0959h
  */
 public class Models {
-
     public static String InsertString(String table, Map<String, Object> collection) {
         String sql = "";
-        List<String> unsetkeys = new ArrayList<>();
+        List<String> unsetKeys = new ArrayList<>();
 
         if (collection.size() > 0) {
-            String keys = "";
-            String values = "";
+            StringBuilder keys = new StringBuilder();
+            StringBuilder values = new StringBuilder();
             for (Map.Entry<String, Object> pair : collection.entrySet()) {
 
-                keys += pair.getKey() + ",";
-                values += ":" + pair.getKey() + ",";
+                keys.append(pair.getKey()).append(",");
+                values.append(":").append(pair.getKey()).append(",");
             }
 
-            keys = keys.substring(0, keys.length() - 1);
-            values = values.substring(0, values.length() - 1);
+            keys = new StringBuilder(keys.substring(0, keys.length() - 1));
+            values = new StringBuilder(values.substring(0, values.length() - 1));
 
-            sql = String.format("insert into %s (%s) values(%s)", table, keys, values);
+            sql = String.format("insert into %s (%s) values(%s)", table, keys.toString(), values.toString());
         }
 
-        for (String key : unsetkeys) {
+        for (String key : unsetKeys) {
             collection.remove(key);
         }
 
@@ -40,53 +39,53 @@ public class Models {
     }
 
     public static String UpdateString(String table, Map<String, Object> collection, Map<String, Object> wherecollection) {
-        String sql = "";
-        List<String> unsetkeys = new ArrayList<>();
+        StringBuilder sql = new StringBuilder();
+        List<String> unsetKeys = new ArrayList<>();
 
         if (collection.size() > 0) {
             String keys;
             String values;
-            sql = String.format("update %s set ", table);
-            for (Map.Entry<String, Object> pair : collection.entrySet()) {
+            sql = new StringBuilder(String.format("update %s set ", table));
 
+            for (Map.Entry<String, Object> pair : collection.entrySet()) {
                 if (pair.getValue() == null) {
-                    unsetkeys.add(pair.getKey());
+                    unsetKeys.add(pair.getKey());
                     continue;
                 }
 
                 keys = pair.getKey() + "=";
                 values = ":" + pair.getKey() + ",";
 
-                sql += keys + values;
+                sql.append(keys).append(values);
             }
 
-            sql = sql.substring(0, sql.length() - 1);
+            sql = new StringBuilder(sql.substring(0, sql.length() - 1));
 
-            sql += " where ";
+            sql.append(" where ");
 
             for (Map.Entry<String, Object> pair : wherecollection.entrySet()) {
                 keys = pair.getKey().replaceAll("_1", "") + "=";
                 values = ":" + pair.getKey() + " and ";
 
-                sql += keys + values;
+                sql.append(keys).append(values);
             }
 
-            sql = sql.substring(0, sql.length() - 5);
+            sql = new StringBuilder(sql.substring(0, sql.length() - 5));
         }
 
-        for (String key : unsetkeys) {
+        for (String key : unsetKeys) {
             collection.remove(key);
         }
 
-        return sql;
+        return sql.toString();
     }
 
-    public static String Likes(Map<String, Object> filterscollection) {
-        String sql = " ";
+    public static String Likes(Map<String, Object> filtersCollection) {
+        StringBuilder sql = new StringBuilder(" ");
         String keys;
         String values;
-        for (Map.Entry<String, Object> pair : filterscollection.entrySet()) {
 
+        for (Map.Entry<String, Object> pair : filtersCollection.entrySet()) {
             int point = pair.getKey().indexOf("_1");
 
             String key = point > 0 ? pair.getKey().substring(0, point) : pair.getKey();
@@ -94,24 +93,24 @@ public class Models {
             keys = key + " ilike ";
             values = ":" + key + " or ";
 
-            sql += keys + values;
+            sql.append(keys).append(values);
         }
 
-        sql = sql.substring(0, sql.length() - 4);
+        sql = new StringBuilder(sql.substring(0, sql.length() - 4));
 
-        return sql;
+        return sql.toString();
     }
 
-    public static String Equals(Map<String, Object> filterscollection) {
-        return Equals(filterscollection,"and","=");
+    public static String Equals(Map<String, Object> filtersCollection) {
+        return Equals(filtersCollection,"and","=");
     }
 
-    public static String Equals(Map<String, Object> filterscollection,String joiner) {
-        return Equals(filterscollection,joiner,"=");
+    public static String Equals(Map<String, Object> filtersCollection,String joiner) {
+        return Equals(filtersCollection,joiner,"=");
     }
 
-    public static String Equals(Map<String, Object> filterscollection, String joiner, String comparator) {
-        String sql = " ";
+    public static String Equals(Map<String, Object> filtersCollection, String joiner, String comparator) {
+        StringBuilder sql = new StringBuilder(" ");
         String keys;
         String values;
 
@@ -128,7 +127,7 @@ public class Models {
         String patternStr = "_[1-9]+";
         Pattern pattern = Pattern.compile(patternStr);
 
-        for (Map.Entry<String, Object> pair : filterscollection.entrySet()) {
+        for (Map.Entry<String, Object> pair : filtersCollection.entrySet()) {
 
             Matcher matcher = pattern.matcher(pair.getKey());
 
@@ -145,13 +144,11 @@ public class Models {
             keys = key + " " + comparator;
             values = ":" + pair.getKey() + " " + joiner;
 
-            sql += keys + values;
+            sql.append(keys).append(values);
         }
 
-        //logger.trace(sql);
+        sql = new StringBuilder(sql.substring(0, sql.length() - (joiner.length() + 1)));
 
-        sql = sql.substring(0, sql.length() - (joiner.length() + 1));
-
-        return sql;
+        return sql.toString();
     }
 }

@@ -15,7 +15,9 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
@@ -188,11 +190,14 @@ public class DBFunctionImpl implements DBFunction {
         params.put("role_id", Optional.ofNullable(entryParams.get("role_id"))
                 .orElse(getUserRoleId("user").size() > 0 ? Integer.parseInt(getUserRoleId("user").get(0).get("id").toString()) : 5));
         params.put("fullname", entryParams.get("fullname"));
-        params.put("email", entryParams.get("email"));
+//        params.put("email", entryParams.get("email"));
         params.put("password", entryParams.get("password"));
-        params.put("msisdn", entryParams.get("msisdn"));
+//        params.put("msisdn", entryParams.get("msisdn"));
         params.put("status", Optional.ofNullable(entryParams.get("status")).orElse("active"));
         params.put("reset_password", Optional.ofNullable(entryParams.get("reset_password")).orElse(true));
+        params.put("created_at", Timestamp.valueOf(LocalDateTime.now()));
+        params.put("updated_at", Timestamp.valueOf(LocalDateTime.now()));
+        params.put("deleted_at", null);
 
         params = cleanMap(params);
 
@@ -235,7 +240,7 @@ public class DBFunctionImpl implements DBFunction {
     @Override
     public Map<String, Object> searchUserByEmailOrPhoneNumber(String searchTerm) {
         LinkedHashMap<String, Object> param = new LinkedHashMap<>();
-        String sql = "SELECT id FROM users WHERE email=:email OR msisdn=:msisdn LIMIT 1";
+        String sql = "SELECT * FROM users WHERE email=:email OR msisdn=:msisdn LIMIT 1";
 
         param.put("email", searchTerm);
         param.put("msisdn", searchTerm);
@@ -243,6 +248,50 @@ public class DBFunctionImpl implements DBFunction {
         List<Map<String, Object>> user = NamedBaseExecute(sql, param, null, new MapResultHandler());
 
         return user.size() > 0 ? user.get(0) : null;
+    }
+    // </editor-fold>
+    //
+    // <editor-fold default-state="collapsed" desc="searchUserById(String id)">
+    @Override
+    public Map<String, Object> searchUserById(String id) {
+        LinkedHashMap<String, Object> param = new LinkedHashMap<>();
+        String sql = "SELECT * FROM users WHERE id=:id LIMIT 1";
+
+        param.put("id", Integer.parseInt(id));
+
+        List<Map<String, Object>> user = NamedBaseExecute(sql, param, null, new MapResultHandler());
+
+        return user.size() > 0 ? user.get(0) : null;
+    }
+    // </editor-fold>
+    //
+    // <editor-fold default-state="collapsed" desc="deleteUser(String id)">
+    @Override
+    public Map<String, Object> deleteUser(String id) {
+        LinkedHashMap<String, Object> params = new LinkedHashMap<>();
+
+        params.put("status", "deleted");
+        params.put("deleted_at", Timestamp.valueOf(LocalDateTime.now()));
+
+        LinkedHashMap<String, Object> where_params = new LinkedHashMap<>();
+        where_params.put("id", Integer.parseInt(id));
+
+        String sql;
+        String table = "users";
+
+        where_params.put("id", Integer.parseInt(id));
+
+        sql = Models.UpdateString(table, params, where_params);
+
+        sql += " returning *";
+
+        List<Map<String, Object>> results = NamedBaseExecute(sql, params, where_params, new MapResultHandler());
+
+        if(results.size() > 0){
+            return results.get(0);
+        }
+
+        return null;
     }
     // </editor-fold>
     //

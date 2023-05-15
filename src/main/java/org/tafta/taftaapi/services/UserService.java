@@ -59,7 +59,7 @@ public class UserService {
     public Map<String, Object> searchUserByEmailOrPhoneNumber(String searchTerm){
         Map<String, Object> searchUserResponse = dbFunction.searchUserByEmailOrPhoneNumber(searchTerm);
 
-        if(searchUserResponse.size() > 0){
+        if(searchUserResponse != null){
             return new HashMap<>() {{
                 put("response_code", "200");
                 put("description", "Success");
@@ -73,5 +73,48 @@ public class UserService {
             }};
         }
     }
+    public Map<String, Object> searchUserById(String id){
+        Map<String, Object> searchUserResponse = dbFunction.searchUserById(id);
 
+        if(searchUserResponse != null){
+            return new HashMap<>() {{
+                put("response_code", "200");
+                put("description", "Success");
+                put("data", searchUserResponse);
+            }};
+        }else{
+            return new HashMap<>() {{
+                put("response_code", "404");
+                put("description", "User not found");
+                put("data", null);
+            }};
+        }
+    }
+    public Map<String, Object> deleteUser(String id){
+        Map<String, Object> searchUserResponse = dbFunction.searchUserById(id);
+
+        if(searchUserResponse != null){
+            Map<String, Object> deleteUserResponse = dbFunction.deleteUser(id);
+
+            if(deleteUserResponse != null){
+                return new HashMap<>() {{
+                    put("response_code", "200");
+                    put("description", "Success");
+                    put("data", null);
+                }};
+            }else{
+                return new HashMap<>() {{
+                    put("response_code", "200");
+                    put("description", "User not deleted");
+                    put("data", null);
+                }};
+            }
+        }else{
+            return new HashMap<>() {{
+                put("response_code", "200");
+                put("description", "User not deleted");
+                put("data", null);
+            }};
+        }
+    }
 }
