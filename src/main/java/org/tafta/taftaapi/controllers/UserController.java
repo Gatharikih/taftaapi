@@ -3,10 +3,7 @@ package org.tafta.taftaapi.controllers;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.tafta.taftaapi.services.DataValidation;
 import org.tafta.taftaapi.services.UserService;
 
@@ -36,7 +33,14 @@ public class UserController {
 
     // query param - scope(one, all), page(default = 1), per_page(default = 10), search, order(default = desc), orderby(default = date)
     @RequestMapping(value ="/api/v1/users", method = RequestMethod.GET)
-    public ResponseEntity<Object> searchUser() {
+    public ResponseEntity<Object> searchUser(@RequestParam("email") String email) {
+        Boolean isEmailValid = dataValidation.isEmailValid(email);
+
+        log.error("isEmailValid : " + isEmailValid);
+        ResponseEntity.status(200).body(new HashMap<>(){{
+            put("is_email_valid", isEmailValid.toString());
+        }});
+
         return null;
     }
 
@@ -47,11 +51,9 @@ public class UserController {
         try {
             List<String> requiredFields = new ArrayList<>();
 
-            requiredFields.add("role_id");
             requiredFields.add("fullname");
             requiredFields.add("email");
             requiredFields.add("msisdn");
-            requiredFields.add("status");
 
             Map<String, Object> dataValidationResult = dataValidation.areFieldsValid(body, requiredFields);
 
@@ -70,6 +72,8 @@ public class UserController {
                 return ResponseEntity.status(400).body(response);
             }
         } catch (Exception e) {
+            e.printStackTrace();
+
             response.put("response_code", "500");
             response.put("description", "Failed");
             response.put("errors",  List.of(new HashMap<>(){{

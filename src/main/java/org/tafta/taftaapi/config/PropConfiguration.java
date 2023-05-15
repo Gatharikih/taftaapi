@@ -45,10 +45,4 @@ public class PropConfiguration {
     private boolean isQueryServiceEnabled;
     @Value("${app.services.notification}")
     private boolean isNotificationServiceEnabled;
-
-    // API
-    @Value("${api.key}")
-    private String apiKey;
-    @Value("${api.password}")
-    private String apiPassword;
 }

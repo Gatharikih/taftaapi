@@ -11,4 +11,5 @@ import java.util.Map;
 
 public interface DBFunction {
     List<Map<String, Object>> createOrUpdateUser(Map<String, Object> entryParams);
+    List<Map<String, Object>> getUserRoleId(String roleName);
 }

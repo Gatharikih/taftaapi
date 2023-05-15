@@ -34,10 +34,6 @@ public class DBFunctionImpl implements DBFunction {
     static Mac mac = null;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private static DbOom dbOom = null;
-    protected String Resource = "";
-    protected String ID = "";
-    protected Map<String, Class<Object>> Columns;
-    private static Props props = null;
 
     public enum LogType {ERRORS, APIREQUESTS, RESPONSES, MONEYTRANS, COOPCALLBACK}
 
@@ -154,12 +150,13 @@ public class DBFunctionImpl implements DBFunction {
         LinkedHashMap<String, Object> params = new LinkedHashMap<>();
 
         params.put("company_id", entryParams.get("company_id"));
-        params.put("role_id", Optional.ofNullable(entryParams.get("role_id")).orElse(5));
+        params.put("role_id", Optional.ofNullable(entryParams.get("role_id"))
+                .orElse(getUserRoleId("user").size() > 0 ? Integer.parseInt(getUserRoleId("user").get(0).get("id").toString()) : 5));
         params.put("fullname", entryParams.get("fullname"));
         params.put("email", entryParams.get("email"));
         params.put("password", entryParams.get("password"));
         params.put("msisdn", entryParams.get("msisdn"));
-        params.put("status", entryParams.get("status"));
+        params.put("status", Optional.ofNullable(entryParams.get("status")).orElse("active"));
         params.put("reset_password", Optional.ofNullable(entryParams.get("reset_password")).orElse(true));
 
         params = cleanMap(params);
@@ -190,6 +187,19 @@ public class DBFunctionImpl implements DBFunction {
         }
 
         return null;
+    }
+    // </editor-fold>
+    //
+    // <editor-fold default-state="collapsed" desc="getUserRoleId(String roleName)">
+    @Override
+    public List<Map<String, Object>> getUserRoleId(String roleName) {
+        LinkedHashMap<String, Object> param = new LinkedHashMap<>();
+        String sql = "SELECT id FROM roles WHERE name=:name OR description =:name LIMIT 1";
+
+        param.put("name", roleName);
+        param.put("currency", roleName.toLowerCase());
+
+        return NamedBaseExecute(sql, param, null, new MapResultHandler());
     }
     // </editor-fold>
     //

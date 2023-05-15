@@ -1,0 +1,37 @@
+application-description: @project.description@
+application-version: @project.version@
+server:
+  port: ${API_ENV_PORT:8200}
+  error:
+    path: /error
+
+app:
+  services:
+    switch: ${API_ENV_SERVICES_SWITCH:false}
+    query: ${API_ENV_SERVICES_QUERY:false}
+    notification: ${API_ENV_SERVICES_NOTIFICATIONS:false}
+  config:
+    is_app_live: ${API_ENV_LIVE:true}
+  scheduler:
+    query_delay: ${API_ENV_INTERVAL_QUERY:10000}
+  db:
+    host: ${API_ENV_PG_HOST:localhost}
+    database: ${API_ENV_PG_DATABASE:rentisha}
+    username: ${API_ENV_PG_USERNAME:postgres}
+    password: ${API_ENV_PG_PASSWORD:admin}
+    port: ${API_ENV_PG_PORT:5432}
+
+logging:
+  pattern: '%d{yyyy-MM-dd HH:mm:ss.SSS} | %-20.20thread | %5p | %-25.25logger{25}: %m%n'
+  level:
+    root: INFO
+    org:
+      tafta:
+        taftaapi: DEBUG
+  file:
+    name: ${API_ENV_LOG_PATH:/home/datadrive/logs/APIREQUEST/}${API_ENV-LOGFILE:today.log}
+  logback:
+    rollingpolicy:
+      file-name-pattern: ${API_ENV_LOG_PATH:/home/datadrive/logs/APIREQUEST/}%d{ddMMyyyy}.%i.log
+      max-history: 500
+      max-file-size: 900MB
