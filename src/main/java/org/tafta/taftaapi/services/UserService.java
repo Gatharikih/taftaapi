@@ -21,25 +21,33 @@ public class UserService {
     @Autowired
     private DBFunctionImpl dbFunction;
 
-    public Map<String, Object> createOrUpdateUser(Map<String, Object> userParams, String method){
-        if(method.equalsIgnoreCase("create")){
-            List<Map<String, Object>> createUserResponse = dbFunction.createUser(userParams);
+    public Map<String, Object> createUser(Map<String, Object> userParams){
+        List<Map<String, Object>> createUserResponse = dbFunction.createUser(userParams);
 
-            if(createUserResponse != null && createUserResponse.size() > 0){
-                return new HashMap<>() {{
-                    put("response_code", "201");
-                    put("description", "Success");
-                    put("data", createUserResponse);
-                }};
-            }else{
-                return new HashMap<>() {{
-                    put("response_code", "200");
-                    put("description", "Record not updated");
-                    put("data", null);
-                }};
-            }
-        }else {
+        if(createUserResponse != null && createUserResponse.size() > 0){
+            return new HashMap<>() {{
+                put("response_code", "201");
+                put("description", "Success");
+                put("data", createUserResponse);
+            }};
+        }else{
+            return new HashMap<>() {{
+                put("response_code", "200");
+                put("description", "Record not updated");
+                put("data", null);
+            }};
+        }
+    }
+    public Map<String, Object> updateUser(Map<String, Object> userParams, String userId){
+        Map<String, Object> userResponse = dbFunction.searchUserById(userId);
+        log.error("userResponse: " + userResponse);
+
+        if (userResponse != null) {
+            userParams.putIfAbsent("id", userId);
+
             List<Map<String, Object>> updateUserResponse = dbFunction.updateUser(userParams);
+
+            log.error("updateUserResponse: " + updateUserResponse);
 
             if(updateUserResponse != null && updateUserResponse.size() > 0){
                 return new HashMap<>() {{
@@ -54,6 +62,12 @@ public class UserService {
                     put("data", null);
                 }};
             }
+        } else {
+            return new HashMap<>() {{
+                put("response_code", "404");
+                put("description", "User not found");
+                put("data", null);
+            }};
         }
     }
     public Map<String, Object> searchUserByEmailOrPhoneNumber(String searchTerm){

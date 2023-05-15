@@ -74,8 +74,8 @@ public class UserController {
         }
     }
 
-    @RequestMapping(value ="/api/v1/users", method = RequestMethod.PUT)
-    public ResponseEntity<Object> updateUser(@RequestHeader Map<String, Object> headers, @RequestBody Map<String, Object> body) {
+    @RequestMapping(value ="/api/v1/users/{user_id}", method = RequestMethod.PUT)
+    public ResponseEntity<Object> updateUser(@RequestHeader Map<String, Object> headers, @PathVariable("user_id") String userId, @RequestBody Map<String, Object> body) {
         Map<String, Object> response = new HashMap<>();
 
         try {
@@ -88,7 +88,7 @@ public class UserController {
             Map<String, Object> dataValidationResult = dataValidation.areFieldsValid(body, requiredFields);
 
             if (Boolean.parseBoolean(dataValidationResult.get("valid").toString())) {
-                Map<String, Object> updateUserResponse = userService.createOrUpdateUser(body, "update");
+                Map<String, Object> updateUserResponse = userService.updateUser(body, userId);
 
                 return ResponseEntity.status(Integer.parseInt(updateUserResponse.get("response_code").toString()))
                         .body(updateUserResponse);
@@ -137,7 +137,7 @@ public class UserController {
             Map<String, Object> dataValidationResult = dataValidation.areFieldsValid(body, requiredFields);
 
             if (Boolean.parseBoolean(dataValidationResult.get("valid").toString())) {
-                Map<String, Object> createUserResponse = userService.createOrUpdateUser(body, "create");
+                Map<String, Object> createUserResponse = userService.createUser(body);
 
                 return ResponseEntity.status(Integer.parseInt(createUserResponse.get("response_code").toString()))
                         .body(createUserResponse);

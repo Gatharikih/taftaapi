@@ -9,6 +9,7 @@ import org.apache.commons.codec.digest.HmacAlgorithms;
 import org.apache.commons.codec.digest.HmacUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.tafta.taftaapi.enums.UserStatus;
 
 import javax.crypto.Mac;
 import java.nio.charset.StandardCharsets;
@@ -26,6 +27,7 @@ import java.util.*;
  * Created on April 27, 2023.
  * Time 0959h
  */
+
 @Slf4j
 @Component
 public class DBFunctionImpl implements DBFunction {
@@ -151,19 +153,41 @@ public class DBFunctionImpl implements DBFunction {
     public List<Map<String, Object>> createUser(Map<String, Object> entryParams) {
         LinkedHashMap<String, Object> params = new LinkedHashMap<>();
 
-        params.put("company_id", entryParams.get("company_id"));
+        if(entryParams.get("company_id") != null){
+            params.put("company_id", entryParams.get("company_id").toString());
+        }
         params.put("role_id", Optional.ofNullable(entryParams.get("role_id"))
                 .orElse(getUserRoleId("user").size() > 0 ? Integer.parseInt(getUserRoleId("user").get(0).get("id").toString()) : 5));
-        params.put("fullname", entryParams.get("fullname"));
-        params.put("email", entryParams.get("email"));
-        params.put("password", entryParams.get("password"));
-        params.put("msisdn", entryParams.get("msisdn"));
-        params.put("status", Optional.ofNullable(entryParams.get("status")).orElse("active"));
-        params.put("reset_password", Optional.ofNullable(entryParams.get("reset_password")).orElse(true));
+
+        if(entryParams.get("fullname") != null){
+            params.put("fullname", entryParams.get("fullname").toString());
+        }
+
+        if(entryParams.get("email") != null){
+            params.put("email", entryParams.get("email").toString());
+        }
+
+        if(entryParams.get("password") != null){
+            params.put("password", entryParams.get("password").toString());
+        }
+
+        if(entryParams.get("msisdn") != null){
+            params.put("msisdn", entryParams.get("msisdn").toString());
+        }
+
+        if(entryParams.get("reset_password") != null){
+            params.put("reset_password", Optional.ofNullable(entryParams.get("reset_password")).orElse(true));
+        }
+
+        if(entryParams.get("status") != null){
+            try {
+                params.put("status", Optional.of(UserStatus.getUserStatusType(entryParams.get("status").toString())).orElse(UserStatus.getUserStatusType("active")));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
 
         params = cleanMap(params);
-
-        LinkedHashMap<String, Object> where_params = new LinkedHashMap<>();
 
         String sql;
         String table = "users";
@@ -171,7 +195,7 @@ public class DBFunctionImpl implements DBFunction {
         sql = Models.InsertString(table, params);
         sql += " returning *";
 
-        List<Map<String, Object>> results = NamedBaseExecute(sql, params, where_params, new MapResultHandler());
+        List<Map<String, Object>> results = NamedBaseExecute(sql, params, null, new MapResultHandler());
 
         if(results.size() > 0){
             return results;
@@ -186,16 +210,40 @@ public class DBFunctionImpl implements DBFunction {
     public List<Map<String, Object>> updateUser(Map<String, Object> entryParams) {
         LinkedHashMap<String, Object> params = new LinkedHashMap<>();
 
-        params.put("company_id", entryParams.get("company_id"));
+        if(entryParams.get("company_id") != null){
+            params.put("company_id", entryParams.get("company_id").toString());
+        }
         params.put("role_id", Optional.ofNullable(entryParams.get("role_id"))
                 .orElse(getUserRoleId("user").size() > 0 ? Integer.parseInt(getUserRoleId("user").get(0).get("id").toString()) : 5));
-        params.put("fullname", entryParams.get("fullname"));
-//        params.put("email", entryParams.get("email"));
-        params.put("password", entryParams.get("password"));
-//        params.put("msisdn", entryParams.get("msisdn"));
-        params.put("status", Optional.ofNullable(entryParams.get("status")).orElse("active"));
-        params.put("reset_password", Optional.ofNullable(entryParams.get("reset_password")).orElse(true));
-        params.put("created_at", Timestamp.valueOf(LocalDateTime.now()));
+
+        if(entryParams.get("fullname") != null){
+            params.put("fullname", entryParams.get("fullname").toString());
+        }
+
+        if(entryParams.get("email") != null){
+            params.put("email", entryParams.get("email").toString());
+        }
+
+        if(entryParams.get("password") != null){
+            params.put("password", entryParams.get("password").toString());
+        }
+
+        if(entryParams.get("msisdn") != null){
+            params.put("msisdn", entryParams.get("msisdn").toString());
+        }
+
+        if(entryParams.get("reset_password") != null){
+            params.put("reset_password", Optional.ofNullable(entryParams.get("reset_password")).orElse(true));
+        }
+
+        if(entryParams.get("status") != null){
+            try {
+                params.put("status", Optional.of(UserStatus.getUserStatusType(entryParams.get("status").toString())).orElse(UserStatus.getUserStatusType("active")));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
         params.put("updated_at", Timestamp.valueOf(LocalDateTime.now()));
         params.put("deleted_at", null);
 
@@ -206,8 +254,7 @@ public class DBFunctionImpl implements DBFunction {
         String sql;
         String table = "users";
 
-        where_params.put("email", params.get("email"));
-        where_params.put("msisdn", params.get("msisdn"));
+        where_params.put("id", Integer.parseInt(entryParams.get("id").toString()));
 
         sql = Models.UpdateString(table, params, where_params);
 
