@@ -25,7 +25,7 @@ public class UserService {
         if(method.equalsIgnoreCase("create")){
             List<Map<String, Object>> createUserResponse = dbFunction.createUser(userParams);
 
-            if(createUserResponse.size() > 0){
+            if(createUserResponse != null && createUserResponse.size() > 0){
                 return new HashMap<>() {{
                     put("response_code", "201");
                     put("description", "Success");
@@ -41,7 +41,7 @@ public class UserService {
         }else {
             List<Map<String, Object>> updateUserResponse = dbFunction.updateUser(userParams);
 
-            if(updateUserResponse.size() > 0){
+            if(updateUserResponse != null && updateUserResponse.size() > 0){
                 return new HashMap<>() {{
                     put("response_code", "201");
                     put("description", "Success");
