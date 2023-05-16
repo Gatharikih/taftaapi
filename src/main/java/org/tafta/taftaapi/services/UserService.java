@@ -71,7 +71,7 @@ public class UserService {
         }
     }
     public Map<String, Object> searchUserByEmailOrPhoneNumber(String searchTerm){
-        Map<String, Object> searchUserResponse = dbFunction.searchUserByEmailOrPhoneNumber(searchTerm);
+        List<Map<String, Object>> searchUserResponse = dbFunction.searchUserByEmailOrPhoneNumber(searchTerm);
 
         if(searchUserResponse != null){
             return new HashMap<>() {{
@@ -83,6 +83,23 @@ public class UserService {
             return new HashMap<>() {{
                 put("response_code", "404");
                 put("description", "User not found");
+                put("data", null);
+            }};
+        }
+    }
+    public Map<String, Object> listAllUsers(Map<String, Object> queryParams){
+        List<Map<String, Object>> listAllUsersResponse = dbFunction.listAllUsers(queryParams);
+
+        if(listAllUsersResponse != null){
+            return new HashMap<>() {{
+                put("response_code", "200");
+                put("description", "Success");
+                put("data", listAllUsersResponse);
+            }};
+        }else{
+            return new HashMap<>() {{
+                put("response_code", "404");
+                put("description", "No user found");
                 put("data", null);
             }};
         }

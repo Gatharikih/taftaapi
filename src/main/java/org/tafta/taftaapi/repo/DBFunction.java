@@ -13,7 +13,8 @@ public interface DBFunction {
     List<Map<String, Object>> createUser(Map<String, Object> entryParams);
     List<Map<String, Object>> updateUser(Map<String, Object> entryParams);
     List<Map<String, Object>> getUserRoleId(String roleName);
-    Map<String, Object> searchUserByEmailOrPhoneNumber(String searchTerm);
+    List<Map<String, Object>> searchUserByEmailOrPhoneNumber(String searchTerm);
+    List<Map<String, Object>> listAllUsers(Map<String, Object> queryParams);
     Map<String, Object> searchUserById(String id);
     Map<String, Object> deleteUser(String id);
 }

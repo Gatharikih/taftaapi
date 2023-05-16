@@ -285,16 +285,40 @@ public class DBFunctionImpl implements DBFunction {
     //
     // <editor-fold default-state="collapsed" desc="searchUserByEmailOrPhoneNumber(String searchTerm)">
     @Override
-    public Map<String, Object> searchUserByEmailOrPhoneNumber(String searchTerm) {
+    public List<Map<String, Object>> searchUserByEmailOrPhoneNumber(String searchTerm) {
         LinkedHashMap<String, Object> param = new LinkedHashMap<>();
-        String sql = "SELECT * FROM users WHERE email=:email OR msisdn=:msisdn LIMIT 1";
+        String sql = "SELECT * FROM users WHERE email=:email OR msisdn=:msisdn OR name=:name LIMIT 1 ORDER BY id, created_at ASC";
 
         param.put("email", searchTerm);
         param.put("msisdn", searchTerm);
+        param.put("name", searchTerm);
 
         List<Map<String, Object>> user = NamedBaseExecute(sql, param, null, new MapResultHandler());
 
-        return user.size() > 0 ? user.get(0) : null;
+        return user.size() > 0 ? user : null;
+    }
+    // </editor-fold>
+    //
+    // <editor-fold default-state="collapsed" desc="List<Map<String, Object>>listAllUsers(String pageNumber) ">
+    @Override
+    public List<Map<String, Object>> listAllUsers(Map<String, Object> queryParams) {
+        LinkedHashMap<String, Object> params = new LinkedHashMap<>();
+        LinkedHashMap<String, Object> where_param = new LinkedHashMap<>();
+        String sql = "SELECT * FROM users WHERE status=:status ORDER BY id, created_at ASC LIMIT :limit OFFSET :offset";
+
+        params = cleanMap(params);
+
+        int limit = 50;
+
+        where_param.put("status", queryParams.getOrDefault("status", "ACTIVE").toString());
+        where_param.put("limit", limit);
+        where_param.put("offset", Integer.parseInt(queryParams.getOrDefault("page_number", "0").toString()) * limit);
+
+        log.error("where_param: " + where_param);
+
+        List<Map<String, Object>> user = NamedBaseExecute(sql, params, where_param, new MapResultHandler());
+
+        return user.size() > 0 ? user : null;
     }
     // </editor-fold>
     //

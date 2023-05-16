@@ -23,10 +23,10 @@ public class UserController {
     @Autowired
     private DataValidation dataValidation;
 
-    @RequestMapping(value ="/api/v1/users/{user_id}", method = RequestMethod.GET)
+    @RequestMapping(value ="/api/v1/users/user/{user_id}", method = RequestMethod.GET)
     public ResponseEntity<Object> getUser(@PathVariable("user_id") String userId) {
         try {
-            if (!userId.trim().equalsIgnoreCase("")) {
+            if (!userId.trim().isEmpty()) {
                 Map<String, Object> searchUserResponse = userService.searchUserById(userId.trim());
 
                 return ResponseEntity.status(Integer.parseInt(searchUserResponse.get("response_code").toString())).body(searchUserResponse);
@@ -48,7 +48,6 @@ public class UserController {
         }
     }
 
-    // query param - scope(one, all), page(default = 1), per_page(default = 10), search, order(default = desc), order by(default = date)
     @RequestMapping(value ="/api/v1/users", method = RequestMethod.GET)
     public ResponseEntity<Object> searchUser(@RequestParam("search_term") String searchTerm) {
         try {
@@ -63,6 +62,27 @@ public class UserController {
                     put("data", null);
                 }});
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+
+            return ResponseEntity.status(500).body(new HashMap<>() {{
+                put("response_code", "500");
+                put("description", "Internal error occurred");
+                put("data", null);
+            }});
+        }
+    }
+
+    // query param - scope(one, all), page(default = 1), per_page(default = 10), search, order(default = desc), order by(default = date)
+    @RequestMapping(value ="/api/v1/users/list", method = RequestMethod.GET)
+    public ResponseEntity<Object> listAllUsers(@RequestParam("page_number") String pageNumber, @RequestParam("status") String status) {
+        try {
+            Map<String, Object> listAllUsersResponse = userService.listAllUsers(new HashMap<>(){{
+                put("page_number", pageNumber);
+                put("status", status);
+            }});
+
+            return ResponseEntity.status(Integer.parseInt(listAllUsersResponse.get("response_code").toString())).body(listAllUsersResponse);
         } catch (Exception e) {
             e.printStackTrace();
 
