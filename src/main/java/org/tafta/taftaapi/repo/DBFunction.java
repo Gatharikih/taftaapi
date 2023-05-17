@@ -21,4 +21,7 @@ public interface DBFunction {
     Map<String, Object> searchPropertyById(String id);
     List<Map<String, Object>> searchProperties(String searchTerm);
     Map<String, Object> deleteProperty(String id);
+    List<Map<String, Object>> createProperty(Map<String, Object> entryParams);
+    List<Map<String, Object>> updateProperty(Map<String, Object> entryParams);
+    List<Map<String, Object>> listAllProperties(Map<String, Object> queryParams);
 }

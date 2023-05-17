@@ -78,59 +78,59 @@ public class PropertyController {
     }
 
 //    // query param - scope(one, all), page(default = 1), per_page(default = 10), search, order(default = desc), order by(default = date)
-//    @RequestMapping(value ="/api/v1/users/list", method = RequestMethod.GET)
-//    public ResponseEntity<Object> listAllUsers(@RequestParam("page_number") String pageNumber, @RequestParam("status") String status) {
-//        try {
-//            Map<String, Object> listAllUsersResponse = userService.listAllUsers(new HashMap<>(){{
-//                put("page_number", pageNumber);
-//                put("status", status);
-//            }});
-//
-//            return ResponseEntity.status(Integer.parseInt(listAllUsersResponse.get("response_code").toString())).body(listAllUsersResponse);
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//
-//            return ResponseEntity.status(500).body(new HashMap<>() {{
-//                put("response_code", "500");
-//                put("description", "Internal error occurred");
-//                put("data", null);
-//            }});
-//        }
-//    }
-//
-//    @RequestMapping(value ="/api/v1/users/{user_id}", method = RequestMethod.PUT)
-//    public ResponseEntity<Object> updateUser(@PathVariable("user_id") String userId, @RequestBody Map<String, Object> body) {
-//        Map<String, Object> response = new HashMap<>();
-//
-//        try {
-//            Map<String, Object> updateUserResponse = userService.updateUser(body, userId);
-//
-//            return ResponseEntity.status(Integer.parseInt(updateUserResponse.get("response_code").toString()))
-//                    .body(updateUserResponse);
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//
-//            log.error("error here");
-//
-//            if (e.getCause() != null || e.getCause().getMessage().contains("duplicate key") || e.getCause().getMessage().contains("unique constraint")){
-//                response.put("response_code", "400");
-//                response.put("description", "Failed");
-//                response.put("errors", List.of(new HashMap<>() {{
-//                    put("description", "Email/phone number already exists");
-//                }}));
-//            }else {
-//                response.put("response_code", "500");
-//                response.put("description", "Failed");
-//                response.put("errors", List.of(new HashMap<>() {{
-//                    put("description", "Internal error occurred");
-//                }}));
-//            }
-//
-//            return ResponseEntity.status(Integer.parseInt(response.get("response_code").toString()))
-//                    .body(response);
-//        }
-//    }
-//
+    @RequestMapping(value ="/api/v1/properties/list", method = RequestMethod.GET)
+    public ResponseEntity<Object> listAllProperties(@RequestParam("page_number") String pageNumber, @RequestParam("status") String status) {
+        try {
+            Map<String, Object> listAllPropertiesResponse = propertyService.listAllProperties(new HashMap<>(){{
+                put("page_number", pageNumber);
+                put("status", status);
+            }});
+
+            return ResponseEntity.status(Integer.parseInt(listAllPropertiesResponse.get("response_code").toString())).body(listAllPropertiesResponse);
+        } catch (Exception e) {
+            e.printStackTrace();
+
+            return ResponseEntity.status(500).body(new HashMap<>() {{
+                put("response_code", "500");
+                put("description", "Internal error occurred");
+                put("data", null);
+            }});
+        }
+    }
+
+    @RequestMapping(value ="/api/v1/properties/{property_id}", method = RequestMethod.PUT)
+    public ResponseEntity<Object> updateProperty(@PathVariable("property_id") String propertyId, @RequestBody Map<String, Object> body) {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            Map<String, Object> updatePropertyResponse = propertyService.updateProperty(body, propertyId);
+
+            return ResponseEntity.status(Integer.parseInt(updatePropertyResponse.get("response_code").toString()))
+                    .body(updatePropertyResponse);
+        } catch (Exception e) {
+            e.printStackTrace();
+
+            log.error("error here");
+
+            if (e.getCause() != null || e.getCause().getMessage().contains("duplicate key") || e.getCause().getMessage().contains("unique constraint")){
+                response.put("response_code", "400");
+                response.put("description", "Failed");
+                response.put("errors", List.of(new HashMap<>() {{
+                    put("description", "Email/phone number already exists");
+                }}));
+            }else {
+                response.put("response_code", "500");
+                response.put("description", "Failed");
+                response.put("errors", List.of(new HashMap<>() {{
+                    put("description", "Internal error occurred");
+                }}));
+            }
+
+            return ResponseEntity.status(Integer.parseInt(response.get("response_code").toString()))
+                    .body(response);
+        }
+    }
+
     @RequestMapping(value ="/api/v1/properties", method = RequestMethod.POST)
     public ResponseEntity<Object> createProperty(@RequestBody Map<String, Object> body) {
         Map<String, Object> response = new HashMap<>();

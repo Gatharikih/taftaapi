@@ -21,60 +21,60 @@ public class PropertyService {
     @Autowired
     private DBFunctionImpl dbFunction;
 
-//    public Map<String, Object> createUser(Map<String, Object> userParams){
-//        List<Map<String, Object>> createUserResponse = dbFunction.createUser(userParams);
-//
-//        if(createUserResponse != null && createUserResponse.size() > 0){
-//            return new HashMap<>() {{
-//                put("response_code", "201");
-//                put("description", "Success");
-//                put("data", createUserResponse);
-//            }};
-//        }else{
-//            return new HashMap<>() {{
-//                put("response_code", "200");
-//                put("description", "Record not updated");
-//                put("data", null);
-//            }};
-//        }
-//    }
-//    public Map<String, Object> updateUser(Map<String, Object> userParams, String userId){
-//        Map<String, Object> userResponse = dbFunction.searchUserById(userId);
-//
-//        if (userResponse != null) {
-//            userParams.putIfAbsent("id", userId);
-//
-//            List<Map<String, Object>> updateUserResponse = dbFunction.updateUser(userParams);
-//
-//            if(updateUserResponse != null){
-//                if(updateUserResponse.size() > 0){
-//                    return new HashMap<>() {{
-//                        put("response_code", "201");
-//                        put("description", "Success");
-//                        put("data", updateUserResponse);
-//                    }};
-//                }else{
-//                    return new HashMap<>() {{
-//                        put("response_code", "400");
-//                        put("description", "Unrecognized status");
-//                        put("data", null);
-//                    }};
-//                }
-//            }else{
-//                return new HashMap<>() {{
-//                    put("response_code", "200");
-//                    put("description", "Record not updated");
-//                    put("data", null);
-//                }};
-//            }
-//        } else {
-//            return new HashMap<>() {{
-//                put("response_code", "404");
-//                put("description", "User not found");
-//                put("data", null);
-//            }};
-//        }
-//    }
+    public Map<String, Object> createProperty(Map<String, Object> propertyParams){
+        List<Map<String, Object>> createPropertyResponse = dbFunction.createProperty(propertyParams);
+
+        if(createPropertyResponse != null && createPropertyResponse.size() > 0){
+            return new HashMap<>() {{
+                put("response_code", "201");
+                put("description", "Success");
+                put("data", createPropertyResponse);
+            }};
+        }else{
+            return new HashMap<>() {{
+                put("response_code", "200");
+                put("description", "Record not updated");
+                put("data", null);
+            }};
+        }
+    }
+    public Map<String, Object> updateProperty(Map<String, Object> propertyParams, String userId){
+        Map<String, Object> userResponse = dbFunction.searchUserById(userId);
+
+        if (userResponse != null) {
+            propertyParams.putIfAbsent("id", userId);
+
+            List<Map<String, Object>> updateUserResponse = dbFunction.updateProperty(propertyParams);
+
+            if(updateUserResponse != null){
+                if(updateUserResponse.size() > 0){
+                    return new HashMap<>() {{
+                        put("response_code", "201");
+                        put("description", "Success");
+                        put("data", updateUserResponse);
+                    }};
+                }else{
+                    return new HashMap<>() {{
+                        put("response_code", "400");
+                        put("description", "Unrecognized status");
+                        put("data", null);
+                    }};
+                }
+            }else{
+                return new HashMap<>() {{
+                    put("response_code", "200");
+                    put("description", "Record not updated");
+                    put("data", null);
+                }};
+            }
+        } else {
+            return new HashMap<>() {{
+                put("response_code", "404");
+                put("description", "Property not found");
+                put("data", null);
+            }};
+        }
+    }
     public Map<String, Object> searchProperties(String searchTerm){
         List<Map<String, Object>> searchUserResponse = dbFunction.searchProperties(searchTerm);
 
@@ -92,23 +92,23 @@ public class PropertyService {
             }};
         }
     }
-//    public Map<String, Object> listAllUsers(Map<String, Object> queryParams){
-//        List<Map<String, Object>> listAllUsersResponse = dbFunction.listAllUsers(queryParams);
-//
-//        if(listAllUsersResponse != null){
-//            return new HashMap<>() {{
-//                put("response_code", "200");
-//                put("description", "Success");
-//                put("data", listAllUsersResponse);
-//            }};
-//        }else{
-//            return new HashMap<>() {{
-//                put("response_code", "404");
-//                put("description", "No user found");
-//                put("data", null);
-//            }};
-//        }
-//    }
+    public Map<String, Object> listAllProperties(Map<String, Object> queryParams){
+        List<Map<String, Object>> listAllUsersResponse = dbFunction.listAllProperties(queryParams);
+
+        if(listAllUsersResponse != null){
+            return new HashMap<>() {{
+                put("response_code", "200");
+                put("description", "Success");
+                put("data", listAllUsersResponse);
+            }};
+        }else{
+            return new HashMap<>() {{
+                put("response_code", "404");
+                put("description", "No user found");
+                put("data", null);
+            }};
+        }
+    }
     public Map<String, Object> searchPropertyById(String id){
         Map<String, Object> searchUserResponse = dbFunction.searchUserById(id);
 

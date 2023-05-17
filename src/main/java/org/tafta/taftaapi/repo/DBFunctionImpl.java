@@ -436,4 +436,152 @@ public class DBFunctionImpl implements DBFunction {
     }
     // </editor-fold>
     //
+    // <editor-fold default-state="collapsed" desc="createProperty(Map<String, Object> entryParams)">
+    @Override
+    public List<Map<String, Object>> createProperty(Map<String, Object> entryParams) {
+        LinkedHashMap<String, Object> params = new LinkedHashMap<>();
+
+        if(entryParams.get("company_id") != null){
+            params.put("company_id", entryParams.get("company_id").toString());
+        }
+        params.put("role_id", Optional.ofNullable(entryParams.get("role_id"))
+                .orElse(getUserRoleId("user").size() > 0 ? Integer.parseInt(getUserRoleId("user").get(0).get("id").toString()) : 5));
+
+        if(entryParams.get("fullname") != null){
+            params.put("fullname", entryParams.get("fullname").toString());
+        }
+
+        if(entryParams.get("email") != null){
+            params.put("email", entryParams.get("email").toString());
+        }
+
+        if(entryParams.get("password") != null){
+            params.put("password", entryParams.get("password").toString());
+        }
+
+        if(entryParams.get("msisdn") != null){
+            params.put("msisdn", entryParams.get("msisdn").toString());
+        }
+
+        if(entryParams.get("reset_password") != null){
+            params.put("reset_password", Optional.ofNullable(entryParams.get("reset_password")).orElse(true));
+        }
+
+        if(entryParams.get("status") != null){
+            try {
+                params.put("status", Optional.of(UserStatus.getUserStatusType(entryParams.get("status").toString())).orElse(UserStatus.getUserStatusType("active")));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        params = cleanMap(params);
+
+        String sql;
+        String table = "properties";
+
+        sql = Models.InsertString(table, params);
+        sql += " returning *";
+
+        List<Map<String, Object>> results = NamedBaseExecute(sql, params, null, new MapResultHandler());
+
+        if(results.size() > 0){
+            return results;
+        }
+
+        return null;
+    }
+    // </editor-fold>
+    //
+    // <editor-fold default-state="collapsed" desc="updateProperty(Map<String, Object> entryParams)">
+    @Override
+    public List<Map<String, Object>> updateProperty(Map<String, Object> entryParams) {
+        LinkedHashMap<String, Object> params = new LinkedHashMap<>();
+
+        if(entryParams.get("company_id") != null){
+            params.put("company_id", entryParams.get("company_id").toString());
+        }
+        params.put("role_id", Optional.ofNullable(entryParams.get("role_id"))
+                .orElse(getUserRoleId("user").size() > 0 ? Integer.parseInt(getUserRoleId("user").get(0).get("id").toString()) : 5));
+
+        if(entryParams.get("fullname") != null){
+            params.put("fullname", entryParams.get("fullname").toString());
+        }
+
+        if(entryParams.get("email") != null){
+            params.put("email", entryParams.get("email").toString());
+        }
+
+        if(entryParams.get("password") != null){
+            params.put("password", entryParams.get("password").toString());
+        }
+
+        if(entryParams.get("msisdn") != null){
+            params.put("msisdn", entryParams.get("msisdn").toString());
+        }
+
+        if(entryParams.get("reset_password") != null){
+            params.put("reset_password", Optional.ofNullable(entryParams.get("reset_password")).orElse(true));
+        }
+
+        if(entryParams.get("status") != null){
+            try {
+                params.put("status", Optional.of(UserStatus.getUserStatusType(entryParams.get("status").toString())).orElse(UserStatus.getUserStatusType("active")));
+            } catch (Exception e) {
+                e.printStackTrace();
+
+//                throw new RuntimeException("Unrecognized status");
+                return new ArrayList<>();
+            }
+        }
+
+        params.put("updated_at", Timestamp.valueOf(LocalDateTime.now()));
+        params.put("deleted_at", null);
+
+        params = cleanMap(params);
+
+        LinkedHashMap<String, Object> where_params = new LinkedHashMap<>();
+
+        String sql;
+        String table = "users";
+
+        where_params.put("id", Integer.parseInt(entryParams.get("id").toString()));
+
+        sql = Models.UpdateString(table, params, where_params);
+
+        sql += " returning *";
+
+        List<Map<String, Object>> results = NamedBaseExecute(sql, params, where_params, new MapResultHandler());
+
+        if(results.size() > 0){
+            return results;
+        }
+
+        return null;
+    }
+    // </editor-fold>
+    //
+    // <editor-fold default-state="collapsed" desc="List<Map<String, Object>>listAllProperties(String pageNumber) ">
+    @Override
+    public List<Map<String, Object>> listAllProperties(Map<String, Object> queryParams) {
+        LinkedHashMap<String, Object> params = new LinkedHashMap<>();
+        LinkedHashMap<String, Object> where_param = new LinkedHashMap<>();
+        String sql = "SELECT * FROM properties WHERE status=:status ORDER BY id, created_at ASC LIMIT :limit OFFSET :offset";
+
+        params = cleanMap(params);
+
+        int limit = 50;
+
+        where_param.put("status", queryParams.getOrDefault("status", "ACTIVE").toString());
+        where_param.put("limit", limit);
+        where_param.put("offset", Integer.parseInt(queryParams.getOrDefault("page_number", "0").toString()) * limit);
+
+        log.error("where_param: " + where_param);
+
+        List<Map<String, Object>> user = NamedBaseExecute(sql, params, where_param, new MapResultHandler());
+
+        return user.size() > 0 ? user : null;
+    }
+    // </editor-fold>
+    //
 }
