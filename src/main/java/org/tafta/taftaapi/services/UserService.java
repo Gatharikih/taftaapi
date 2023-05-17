@@ -40,21 +40,26 @@ public class UserService {
     }
     public Map<String, Object> updateUser(Map<String, Object> userParams, String userId){
         Map<String, Object> userResponse = dbFunction.searchUserById(userId);
-        log.error("userResponse: " + userResponse);
 
         if (userResponse != null) {
             userParams.putIfAbsent("id", userId);
 
             List<Map<String, Object>> updateUserResponse = dbFunction.updateUser(userParams);
 
-            log.error("updateUserResponse: " + updateUserResponse);
-
-            if(updateUserResponse != null && updateUserResponse.size() > 0){
-                return new HashMap<>() {{
-                    put("response_code", "201");
-                    put("description", "Success");
-                    put("data", updateUserResponse);
-                }};
+            if(updateUserResponse != null){
+                if(updateUserResponse.size() > 0){
+                    return new HashMap<>() {{
+                        put("response_code", "201");
+                        put("description", "Success");
+                        put("data", updateUserResponse);
+                    }};
+                }else{
+                    return new HashMap<>() {{
+                        put("response_code", "400");
+                        put("description", "Unrecognized status");
+                        put("data", null);
+                    }};
+                }
             }else{
                 return new HashMap<>() {{
                     put("response_code", "200");

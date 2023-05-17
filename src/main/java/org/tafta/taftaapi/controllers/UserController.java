@@ -95,34 +95,18 @@ public class UserController {
     }
 
     @RequestMapping(value ="/api/v1/users/{user_id}", method = RequestMethod.PUT)
-    public ResponseEntity<Object> updateUser(@RequestHeader Map<String, Object> headers, @PathVariable("user_id") String userId, @RequestBody Map<String, Object> body) {
+    public ResponseEntity<Object> updateUser(@PathVariable("user_id") String userId, @RequestBody Map<String, Object> body) {
         Map<String, Object> response = new HashMap<>();
 
         try {
-            List<String> requiredFields = new ArrayList<>();
+            Map<String, Object> updateUserResponse = userService.updateUser(body, userId);
 
-            requiredFields.add("fullname");
-            requiredFields.add("email");
-            requiredFields.add("msisdn");
-
-            Map<String, Object> dataValidationResult = dataValidation.areFieldsValid(body, requiredFields);
-
-            if (Boolean.parseBoolean(dataValidationResult.get("valid").toString())) {
-                Map<String, Object> updateUserResponse = userService.updateUser(body, userId);
-
-                return ResponseEntity.status(Integer.parseInt(updateUserResponse.get("response_code").toString()))
-                        .body(updateUserResponse);
-            } else {
-                Map validationErrorMap = (Map) dataValidationResult.get("errors");
-
-                response.put("response_code", "400");
-                response.put("description", "Failed");
-                response.put("errors", List.of(validationErrorMap.get("message")));
-
-                return ResponseEntity.status(400).body(response);
-            }
+            return ResponseEntity.status(Integer.parseInt(updateUserResponse.get("response_code").toString()))
+                    .body(updateUserResponse);
         } catch (Exception e) {
             e.printStackTrace();
+
+            log.error("error here");
 
             if (e.getCause() != null || e.getCause().getMessage().contains("duplicate key") || e.getCause().getMessage().contains("unique constraint")){
                 response.put("response_code", "400");

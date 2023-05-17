@@ -148,6 +148,10 @@ public class DBFunctionImpl implements DBFunction {
     }
     // </editor-fold>
     //
+
+    /*-------------------- USERS -------------------------*/
+
+    //
     // <editor-fold default-state="collapsed" desc="createUser(Map<String, Object> entryParams)">
     @Override
     public List<Map<String, Object>> createUser(Map<String, Object> entryParams) {
@@ -240,7 +244,10 @@ public class DBFunctionImpl implements DBFunction {
             try {
                 params.put("status", Optional.of(UserStatus.getUserStatusType(entryParams.get("status").toString())).orElse(UserStatus.getUserStatusType("active")));
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                e.printStackTrace();
+
+//                throw new RuntimeException("Unrecognized status");
+                return new ArrayList<>();
             }
         }
 
@@ -330,9 +337,9 @@ public class DBFunctionImpl implements DBFunction {
 
         param.put("id", Integer.parseInt(id));
 
-        List<Map<String, Object>> user = NamedBaseExecute(sql, param, null, new MapResultHandler());
+        List<Map<String, Object>> users = NamedBaseExecute(sql, param, null, new MapResultHandler());
 
-        return user.size() > 0 ? user.get(0) : null;
+        return users.size() > 0 ? users.get(0) : null;
     }
     // </editor-fold>
     //
@@ -349,6 +356,69 @@ public class DBFunctionImpl implements DBFunction {
 
         String sql;
         String table = "users";
+
+        where_params.put("id", Integer.parseInt(id));
+
+        sql = Models.UpdateString(table, params, where_params);
+
+        sql += " returning *";
+
+        List<Map<String, Object>> results = NamedBaseExecute(sql, params, where_params, new MapResultHandler());
+
+        if(results.size() > 0){
+            return results.get(0);
+        }
+
+        return null;
+    }
+    // </editor-fold>
+    //
+
+    /*-------------------- PROPERTIES -------------------------*/
+
+    // <editor-fold default-state="collapsed" desc="searchPropertyById(String id)">
+    @Override
+    public Map<String, Object> searchPropertyById(String id) {
+        LinkedHashMap<String, Object> param = new LinkedHashMap<>();
+        String sql = "SELECT * FROM properties WHERE id=:id LIMIT 1";
+
+        param.put("id", Integer.parseInt(id));
+
+        List<Map<String, Object>> properties = NamedBaseExecute(sql, param, null, new MapResultHandler());
+
+        return properties.size() > 0 ? properties.get(0) : null;
+    }
+    // </editor-fold>
+    //
+    // <editor-fold default-state="collapsed" desc="searchProperties(String searchTerm)">
+    @Override
+    public List<Map<String, Object>> searchProperties(String searchTerm) {
+        LinkedHashMap<String, Object> param = new LinkedHashMap<>();
+        String sql = "SELECT * FROM properties WHERE property_name=:property_name OR county=:county OR name=:name LIMIT 1 ORDER BY id, created_at ASC";
+
+        param.put("property_name", searchTerm);
+        param.put("county", searchTerm);
+        param.put("name", searchTerm);
+
+        List<Map<String, Object>> properties = NamedBaseExecute(sql, param, null, new MapResultHandler());
+
+        return properties.size() > 0 ? properties : null;
+    }
+    // </editor-fold>
+    //
+    // <editor-fold default-state="collapsed" desc="deleteProperty(String id)">
+    @Override
+    public Map<String, Object> deleteProperty(String id) {
+        LinkedHashMap<String, Object> params = new LinkedHashMap<>();
+
+        params.put("status", "deleted");
+        params.put("deleted_at", Timestamp.valueOf(LocalDateTime.now()));
+
+        LinkedHashMap<String, Object> where_params = new LinkedHashMap<>();
+        where_params.put("id", Integer.parseInt(id));
+
+        String sql;
+        String table = "properties";
 
         where_params.put("id", Integer.parseInt(id));
 

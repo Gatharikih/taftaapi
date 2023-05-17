@@ -13,7 +13,7 @@ public enum UserStatus {
 
         if(type.equalsIgnoreCase("active")){
             statusType = UserStatus.ACTIVE.name();
-        }else if(type.equalsIgnoreCase("in-active")){
+        }else if(type.equalsIgnoreCase("in-active") || type.equalsIgnoreCase("inactive")){
             statusType = UserStatus.INACTIVE.name();
         }else if(type.equalsIgnoreCase("deleted")){
             statusType = UserStatus.DELETED.name();

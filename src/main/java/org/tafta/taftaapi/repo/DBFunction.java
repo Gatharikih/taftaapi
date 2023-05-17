@@ -17,4 +17,8 @@ public interface DBFunction {
     List<Map<String, Object>> listAllUsers(Map<String, Object> queryParams);
     Map<String, Object> searchUserById(String id);
     Map<String, Object> deleteUser(String id);
+
+    Map<String, Object> searchPropertyById(String id);
+    List<Map<String, Object>> searchProperties(String searchTerm);
+    Map<String, Object> deleteProperty(String id);
 }
