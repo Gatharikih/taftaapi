@@ -8,10 +8,7 @@ import org.tafta.taftaapi.services.DataValidation;
 import org.tafta.taftaapi.services.PropertyService;
 import org.tafta.taftaapi.services.UserService;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author Gathariki Ngigi
@@ -53,19 +50,23 @@ public class PropertyController {
     }
 
     @RequestMapping(value ="/api/v1/properties", method = RequestMethod.GET)
-    public ResponseEntity<Object> searchProperties(@RequestParam("search_term") String searchTerm) {
+    public ResponseEntity<Object> searchProperties(@RequestParam("county") Optional<String> county, @RequestParam("property_name") Optional<String> propertyName, @RequestParam("min_price") Optional<String> minPrice
+            , @RequestParam("max_price") Optional<String> maxPrice, @RequestParam("price") Optional<String> price, @RequestParam("description") Optional<String> description,
+                                                   @RequestParam("location") Optional<String> location) {
         try {
-            if (!searchTerm.isEmpty()) {
-                Map<String, Object> searchPropertiesResponse = propertyService.searchProperties(searchTerm);
+            Map<String, Object> searchMap = new HashMap<>();
 
-                return ResponseEntity.status(Integer.parseInt(searchPropertiesResponse.get("response_code").toString())).body(searchPropertiesResponse);
-            } else {
-                return ResponseEntity.status(404).body(new HashMap<>() {{
-                    put("response_code", "404");
-                    put("description", "Success");
-                    put("data", null);
-                }});
-            }
+            county.ifPresent(s -> searchMap.put("county", s));
+            propertyName.ifPresent(s -> searchMap.put("property_name", s));
+            minPrice.ifPresent(s -> searchMap.put("min_price", s));
+            maxPrice.ifPresent(s -> searchMap.put("max_price", s));
+            price.ifPresent(s -> searchMap.put("price", s));
+            description.ifPresent(s -> searchMap.put("description", s));
+            location.ifPresent(s -> searchMap.put("location", s));
+
+            Map<String, Object> searchPropertiesResponse = propertyService.searchProperties(searchMap);
+
+            return ResponseEntity.status(Integer.parseInt(searchPropertiesResponse.get("response_code").toString())).body(searchPropertiesResponse);
         } catch (Exception e) {
             e.printStackTrace();
 
@@ -77,14 +78,15 @@ public class PropertyController {
         }
     }
 
-//    // query param - scope(one, all), page(default = 1), per_page(default = 10), search, order(default = desc), order by(default = date)
     @RequestMapping(value ="/api/v1/properties/list", method = RequestMethod.GET)
-    public ResponseEntity<Object> listAllProperties(@RequestParam("page_number") String pageNumber, @RequestParam("status") String status) {
+    public ResponseEntity<Object> listAllProperties(@RequestParam("page_number") Optional<String> pageNumber, @RequestParam("status") Optional<String> status) {
         try {
-            Map<String, Object> listAllPropertiesResponse = propertyService.listAllProperties(new HashMap<>(){{
-                put("page_number", pageNumber);
-                put("status", status);
-            }});
+            Map<String, Object> searchMap = new HashMap<>();
+
+            pageNumber.ifPresent(s -> searchMap.put("page_number", s));
+            status.ifPresent(s -> searchMap.put("status", s));
+
+            Map<String, Object> listAllPropertiesResponse = propertyService.listAllProperties(searchMap);
 
             return ResponseEntity.status(Integer.parseInt(listAllPropertiesResponse.get("response_code").toString())).body(listAllPropertiesResponse);
         } catch (Exception e) {
@@ -138,9 +140,13 @@ public class PropertyController {
         try {
             List<String> requiredFields = new ArrayList<>();
 
-            requiredFields.add("fullname");
-            requiredFields.add("email");
-            requiredFields.add("msisdn");
+            requiredFields.add("county");
+            requiredFields.add("latitude");
+            requiredFields.add("longitude");
+            requiredFields.add("location");
+            requiredFields.add("property_description");
+            requiredFields.add("property_name");
+            requiredFields.add("property_price");
 
             Map<String, Object> dataValidationResult = dataValidation.areFieldsValid(body, requiredFields);
 

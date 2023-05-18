@@ -19,7 +19,7 @@ public interface DBFunction {
     Map<String, Object> deleteUser(String id);
 
     Map<String, Object> searchPropertyById(String id);
-    List<Map<String, Object>> searchProperties(String searchTerm);
+    List<Map<String, Object>> searchProperties(Map<String, Object> searchMap);
     Map<String, Object> deleteProperty(String id);
     List<Map<String, Object>> createProperty(Map<String, Object> entryParams);
     List<Map<String, Object>> updateProperty(Map<String, Object> entryParams);

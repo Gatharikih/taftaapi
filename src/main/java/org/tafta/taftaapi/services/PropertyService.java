@@ -39,9 +39,9 @@ public class PropertyService {
         }
     }
     public Map<String, Object> updateProperty(Map<String, Object> propertyParams, String userId){
-        Map<String, Object> userResponse = dbFunction.searchUserById(userId);
+        Map<String, Object> propertyResponse = dbFunction.searchPropertyById(userId);
 
-        if (userResponse != null) {
+        if (propertyResponse != null) {
             propertyParams.putIfAbsent("id", userId);
 
             List<Map<String, Object>> updateUserResponse = dbFunction.updateProperty(propertyParams);
@@ -75,8 +75,8 @@ public class PropertyService {
             }};
         }
     }
-    public Map<String, Object> searchProperties(String searchTerm){
-        List<Map<String, Object>> searchUserResponse = dbFunction.searchProperties(searchTerm);
+    public Map<String, Object> searchProperties(Map<String, Object> searchMap){
+        List<Map<String, Object>> searchUserResponse = dbFunction.searchProperties(searchMap);
 
         if(searchUserResponse != null){
             return new HashMap<>() {{
@@ -104,13 +104,13 @@ public class PropertyService {
         }else{
             return new HashMap<>() {{
                 put("response_code", "404");
-                put("description", "No user found");
+                put("description", "No property found");
                 put("data", null);
             }};
         }
     }
     public Map<String, Object> searchPropertyById(String id){
-        Map<String, Object> searchUserResponse = dbFunction.searchUserById(id);
+        Map<String, Object> searchUserResponse = dbFunction.searchPropertyById(id);
 
         if(searchUserResponse != null){
             return new HashMap<>() {{
@@ -121,7 +121,7 @@ public class PropertyService {
         }else{
             return new HashMap<>() {{
                 put("response_code", "404");
-                put("description", "User not found");
+                put("description", "No property found");
                 put("data", null);
             }};
         }

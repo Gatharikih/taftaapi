@@ -38,6 +38,7 @@ public class DBFunctionImpl implements DBFunction {
     static Mac mac = null;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private static DbOom dbOom = null;
+    int trackQuery;
 
     public enum LogType {ERRORS, APIREQUESTS, RESPONSES, MONEYTRANS, COOPCALLBACK}
 
@@ -151,7 +152,6 @@ public class DBFunctionImpl implements DBFunction {
 
     /*-------------------- USERS -------------------------*/
 
-    //
     // <editor-fold default-state="collapsed" desc="createUser(Map<String, Object> entryParams)">
     @Override
     public List<Map<String, Object>> createUser(Map<String, Object> entryParams) {
@@ -390,15 +390,78 @@ public class DBFunctionImpl implements DBFunction {
     }
     // </editor-fold>
     //
-    // <editor-fold default-state="collapsed" desc="searchProperties(String searchTerm)">
+    // <editor-fold default-state="collapsed" desc="searchProperties(Map<String, Object> searchMap)">
     @Override
-    public List<Map<String, Object>> searchProperties(String searchTerm) {
+    public List<Map<String, Object>> searchProperties(Map<String, Object> searchMap) {
         LinkedHashMap<String, Object> param = new LinkedHashMap<>();
-        String sql = "SELECT * FROM properties WHERE property_name=:property_name OR county=:county OR name=:name LIMIT 1 ORDER BY id, created_at ASC";
+        String searchTermsStr = "";
+        trackQuery = 0;
 
-        param.put("property_name", searchTerm);
-        param.put("county", searchTerm);
-        param.put("name", searchTerm);
+        if(searchMap.get("county") != null){
+            if(trackQuery >= 1) {
+                searchTermsStr += " AND LOWER(county)=LOWER(" + searchMap.get("county").toString() + ")";
+            }else{
+                searchTermsStr += " LOWER(county)=LOWER(" + searchMap.get("county").toString() + ")";
+            }
+
+            trackQuery = trackQuery + 1;
+        }
+
+        if(searchMap.get("property_name") != null){
+            if(trackQuery >= 1){
+                searchTermsStr += " AND LOWER(property_name)=LOWER(" + searchMap.get("property_name").toString() + ")";
+            }else{
+                searchTermsStr += " LOWER(property_name)=LOWER(" + searchMap.get("property_name").toString() + ")";
+            }
+
+            trackQuery = trackQuery + 1;
+        }
+
+        if(searchMap.get("min_price") != null){
+            if(trackQuery >= 1) {
+                searchTermsStr += " AND CAST (property_price AS INTEGER) >= " + Integer.parseInt(searchMap.get("min_price").toString());
+            }else{
+                searchTermsStr += " CAST (property_price AS INTEGER) >= " + Integer.parseInt(searchMap.get("min_price").toString());
+            }
+
+            trackQuery = trackQuery + 1;
+        }
+
+        if(searchMap.get("max_price") != null){
+            if(trackQuery >= 1) {
+                searchTermsStr += " AND CAST (property_price AS INTEGER) <= " + Integer.parseInt(searchMap.get("max_price").toString());
+            }else{
+                searchTermsStr += " CAST (property_price AS INTEGER) <= " + Integer.parseInt(searchMap.get("max_price").toString());
+            }
+        }
+
+        if(searchMap.get("property_price") != null){
+            if(trackQuery >= 1) {
+                searchTermsStr += " and property_price=" + searchMap.get("property_price").toString();
+            }else{
+                searchTermsStr += " property_price=" + searchMap.get("property_price").toString();
+            }
+        }
+
+        if(searchMap.get("description") != null){
+            if(trackQuery >= 1) {
+                searchTermsStr += " and LOWER(property_description) LIKE LOWER('%" + searchMap.get("description").toString() + "%')";
+            }else{
+                searchTermsStr += " LOWER(property_description) LIKE LOWER('%" + searchMap.get("description").toString() + "%')";
+            }
+        }
+
+        if(searchMap.get("location") != null){
+            if(trackQuery >= 1) {
+                searchTermsStr += " and LOWER(location) LIKE LOWER('%" + searchMap.get("location").toString() + "%')";
+            }else{
+                searchTermsStr += " LOWER(location) LIKE LOWER('%" + searchMap.get("location").toString() + "%')";
+            }
+        }
+
+        String sql = "SELECT * FROM properties WHERE " + searchTermsStr + " ORDER BY id, created_at ASC LIMIT 1";
+
+        log.error("sql11: " + sql);
 
         List<Map<String, Object>> properties = NamedBaseExecute(sql, param, null, new MapResultHandler());
 
@@ -441,30 +504,34 @@ public class DBFunctionImpl implements DBFunction {
     public List<Map<String, Object>> createProperty(Map<String, Object> entryParams) {
         LinkedHashMap<String, Object> params = new LinkedHashMap<>();
 
-        if(entryParams.get("company_id") != null){
-            params.put("company_id", entryParams.get("company_id").toString());
-        }
-        params.put("role_id", Optional.ofNullable(entryParams.get("role_id"))
-                .orElse(getUserRoleId("user").size() > 0 ? Integer.parseInt(getUserRoleId("user").get(0).get("id").toString()) : 5));
+        params.put("county", entryParams.get("county").toString());
+        params.put("latitude", entryParams.get("latitude").toString());
+        params.put("longitude", entryParams.get("longitude").toString());
+        params.put("location", entryParams.get("location").toString());
+        params.put("property_description", entryParams.get("property_description").toString());
+        params.put("property_name", entryParams.get("property_name").toString());
+        params.put("property_price", entryParams.get("property_price").toString());
 
-        if(entryParams.get("fullname") != null){
-            params.put("fullname", entryParams.get("fullname").toString());
-        }
+        params.put("manager", entryParams.get("role_id"));
 
-        if(entryParams.get("email") != null){
-            params.put("email", entryParams.get("email").toString());
-        }
-
-        if(entryParams.get("password") != null){
-            params.put("password", entryParams.get("password").toString());
+        if(entryParams.get("maximum_price") != null){
+            params.put("maximum_price", entryParams.get("maximum_price").toString());
         }
 
-        if(entryParams.get("msisdn") != null){
-            params.put("msisdn", entryParams.get("msisdn").toString());
+        if(entryParams.get("metadata") != null){
+            params.put("metadata", entryParams.get("metadata").toString());
         }
 
-        if(entryParams.get("reset_password") != null){
-            params.put("reset_password", Optional.ofNullable(entryParams.get("reset_password")).orElse(true));
+        if(entryParams.get("minimum_price") != null){
+            params.put("minimum_price", entryParams.get("minimum_price").toString());
+        }
+
+        if(entryParams.get("property_id") != null){
+            params.put("property_id", entryParams.getOrDefault("property_id", UUID.randomUUID().toString()).toString());
+        }
+
+        if(entryParams.get("property_price") != null){
+
         }
 
         if(entryParams.get("status") != null){
@@ -473,6 +540,10 @@ public class DBFunctionImpl implements DBFunction {
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
+        }
+
+        if(entryParams.get("verified") != null){
+            params.put("verified", Boolean.parseBoolean(entryParams.getOrDefault("verified", false).toString()));
         }
 
         params = cleanMap(params);
@@ -574,9 +645,12 @@ public class DBFunctionImpl implements DBFunction {
 
         where_param.put("status", queryParams.getOrDefault("status", "ACTIVE").toString());
         where_param.put("limit", limit);
-        where_param.put("offset", Integer.parseInt(queryParams.getOrDefault("page_number", "0").toString()) * limit);
 
-        log.error("where_param: " + where_param);
+        if(queryParams.get("page_number") == null){
+            where_param.put("offset", 0);
+        }else{
+            where_param.put("offset", Integer.parseInt(queryParams.getOrDefault("page_number", "0").toString()) * limit);
+        }
 
         List<Map<String, Object>> user = NamedBaseExecute(sql, params, where_param, new MapResultHandler());
 
