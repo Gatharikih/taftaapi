@@ -527,11 +527,11 @@ public class DBFunctionImpl implements DBFunction {
         }
 
         if(entryParams.get("property_id") != null){
-            params.put("property_id", entryParams.getOrDefault("property_id", UUID.randomUUID().toString()).toString());
-        }
+            params.put("property_id", entryParams.get("property_id").toString());
+        }else{
+            String propertyId = UUID.randomUUID().toString();
 
-        if(entryParams.get("property_price") != null){
-
+            params.put("property_id", propertyId);
         }
 
         if(entryParams.get("status") != null){
