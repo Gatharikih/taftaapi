@@ -615,6 +615,8 @@ public class DBFunctionImpl implements DBFunction {
             try {
                 params.put("status", Optional.of(UserStatus.getUserStatusType(entryParams.get("status").toString())).orElse(UserStatus.getUserStatusType("active")));
             } catch (Exception e) {
+                e.printStackTrace();
+
                 throw new RuntimeException(e);
             }
         }
