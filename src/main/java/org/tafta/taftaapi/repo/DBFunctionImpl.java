@@ -511,20 +511,10 @@ public class DBFunctionImpl implements DBFunction {
         params.put("property_description", entryParams.get("property_description").toString());
         params.put("property_name", entryParams.get("property_name").toString());
         params.put("property_price", entryParams.get("property_price").toString());
-
         params.put("manager", entryParams.get("role_id"));
-
-        if(entryParams.get("maximum_price") != null){
-            params.put("maximum_price", entryParams.get("maximum_price").toString());
-        }
-
-        if(entryParams.get("metadata") != null){
-            params.put("metadata", entryParams.get("metadata").toString());
-        }
-
-        if(entryParams.get("minimum_price") != null){
-            params.put("minimum_price", entryParams.get("minimum_price").toString());
-        }
+        params.put("maximum_price", entryParams.get("maximum_price").toString());
+        params.put("metadata", entryParams.get("metadata").toString());
+        params.put("minimum_price", entryParams.get("minimum_price").toString());
 
         if(entryParams.get("property_id") != null){
             params.put("property_id", entryParams.get("property_id").toString());
@@ -569,41 +559,68 @@ public class DBFunctionImpl implements DBFunction {
     public List<Map<String, Object>> updateProperty(Map<String, Object> entryParams) {
         LinkedHashMap<String, Object> params = new LinkedHashMap<>();
 
-        if(entryParams.get("company_id") != null){
-            params.put("company_id", entryParams.get("company_id").toString());
-        }
-        params.put("role_id", Optional.ofNullable(entryParams.get("role_id"))
-                .orElse(getUserRoleId("user").size() > 0 ? Integer.parseInt(getUserRoleId("user").get(0).get("id").toString()) : 5));
-
-        if(entryParams.get("fullname") != null){
-            params.put("fullname", entryParams.get("fullname").toString());
+        if(entryParams.get("county") != null) {
+            params.put("county", entryParams.get("county").toString());
         }
 
-        if(entryParams.get("email") != null){
-            params.put("email", entryParams.get("email").toString());
+        if(entryParams.get("latitude") != null) {
+            params.put("latitude", entryParams.get("latitude").toString());
         }
 
-        if(entryParams.get("password") != null){
-            params.put("password", entryParams.get("password").toString());
+        if(entryParams.get("longitude") != null) {
+            params.put("longitude", entryParams.get("longitude").toString());
         }
 
-        if(entryParams.get("msisdn") != null){
-            params.put("msisdn", entryParams.get("msisdn").toString());
+        if(entryParams.get("location") != null) {
+            params.put("location", entryParams.get("location").toString());
         }
 
-        if(entryParams.get("reset_password") != null){
-            params.put("reset_password", Optional.ofNullable(entryParams.get("reset_password")).orElse(true));
+        if(entryParams.get("property_description") != null) {
+            params.put("property_description", entryParams.get("property_description").toString());
+        }
+
+        if(entryParams.get("property_name") != null) {
+            params.put("property_name", entryParams.get("property_name").toString());
+        }
+
+        if(entryParams.get("property_price") != null) {
+            params.put("property_price", entryParams.get("property_price").toString());
+        }
+
+        if(entryParams.get("manager") != null) {
+            params.put("manager", entryParams.get("role_id"));
+        }
+
+        if(entryParams.get("maximum_price") != null){
+            params.put("maximum_price", entryParams.get("maximum_price").toString());
+        }
+
+        if(entryParams.get("metadata") != null){
+            params.put("metadata", entryParams.get("metadata").toString());
+        }
+
+        if(entryParams.get("minimum_price") != null){
+            params.put("minimum_price", entryParams.get("minimum_price").toString());
+        }
+
+        if(entryParams.get("property_id") != null){
+            params.put("property_id", entryParams.get("property_id").toString());
+        }else{
+            String propertyId = UUID.randomUUID().toString();
+
+            params.put("property_id", propertyId);
         }
 
         if(entryParams.get("status") != null){
             try {
                 params.put("status", Optional.of(UserStatus.getUserStatusType(entryParams.get("status").toString())).orElse(UserStatus.getUserStatusType("active")));
             } catch (Exception e) {
-                e.printStackTrace();
-
-//                throw new RuntimeException("Unrecognized status");
-                return new ArrayList<>();
+                throw new RuntimeException(e);
             }
+        }
+
+        if(entryParams.get("verified") != null){
+            params.put("verified", Boolean.parseBoolean(entryParams.getOrDefault("verified", false).toString()));
         }
 
         params.put("updated_at", Timestamp.valueOf(LocalDateTime.now()));
@@ -614,7 +631,7 @@ public class DBFunctionImpl implements DBFunction {
         LinkedHashMap<String, Object> where_params = new LinkedHashMap<>();
 
         String sql;
-        String table = "users";
+        String table = "properties";
 
         where_params.put("id", Integer.parseInt(entryParams.get("id").toString()));
 

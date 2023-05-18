@@ -112,13 +112,11 @@ public class PropertyController {
         } catch (Exception e) {
             e.printStackTrace();
 
-            log.error("error here");
-
             if (e.getCause() != null || e.getCause().getMessage().contains("duplicate key") || e.getCause().getMessage().contains("unique constraint")){
                 response.put("response_code", "400");
                 response.put("description", "Failed");
                 response.put("errors", List.of(new HashMap<>() {{
-                    put("description", "Email/phone number already exists");
+                    put("description", "Record already exists");
                 }}));
             }else {
                 response.put("response_code", "500");

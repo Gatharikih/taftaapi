@@ -38,20 +38,18 @@ public class PropertyService {
             }};
         }
     }
-    public Map<String, Object> updateProperty(Map<String, Object> propertyParams, String userId){
-        Map<String, Object> propertyResponse = dbFunction.searchPropertyById(userId);
+    public Map<String, Object> updateProperty(Map<String, Object> propertyParams, String propertyId){
+        Map<String, Object> propertyResponse = dbFunction.searchPropertyById(propertyId);
 
         if (propertyResponse != null) {
-            propertyParams.putIfAbsent("id", userId);
+            List<Map<String, Object>> updatePropertyResponse = dbFunction.updateProperty(propertyParams);
 
-            List<Map<String, Object>> updateUserResponse = dbFunction.updateProperty(propertyParams);
-
-            if(updateUserResponse != null){
-                if(updateUserResponse.size() > 0){
+            if(updatePropertyResponse != null){
+                if(updatePropertyResponse.size() > 0){
                     return new HashMap<>() {{
                         put("response_code", "201");
                         put("description", "Success");
-                        put("data", updateUserResponse);
+                        put("data", updatePropertyResponse);
                     }};
                 }else{
                     return new HashMap<>() {{
