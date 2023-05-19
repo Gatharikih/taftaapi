@@ -604,17 +604,13 @@ public class DBFunctionImpl implements DBFunction {
             params.put("minimum_price", entryParams.get("minimum_price").toString());
         }
 
-        if(entryParams.get("property_id") != null){
-            params.put("property_id", entryParams.get("property_id").toString());
-        }else{
-            String propertyId = UUID.randomUUID().toString();
-
-            params.put("property_id", propertyId);
-        }
-
         if(entryParams.get("status") != null){
             try {
                 params.put("status", UserStatus.getUserStatusType(entryParams.get("status").toString()));
+
+                if(UserStatus.getUserStatusType(entryParams.get("status").toString()).equalsIgnoreCase(PropertyStatus.DELETED.name())){
+                    params.put("deleted_at", Timestamp.valueOf(LocalDateTime.now()));
+                }
             } catch (Exception e) {
                 e.printStackTrace();
 
@@ -627,7 +623,6 @@ public class DBFunctionImpl implements DBFunction {
         }
 
         params.put("updated_at", Timestamp.valueOf(LocalDateTime.now()));
-        params.put("deleted_at", null);
 
         params = cleanMap(params);
 
