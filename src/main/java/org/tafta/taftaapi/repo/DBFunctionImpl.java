@@ -9,6 +9,7 @@ import org.apache.commons.codec.digest.HmacAlgorithms;
 import org.apache.commons.codec.digest.HmacUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.tafta.taftaapi.enums.PropertyStatus;
 import org.tafta.taftaapi.enums.UserStatus;
 
 import javax.crypto.Mac;
@@ -242,7 +243,7 @@ public class DBFunctionImpl implements DBFunction {
 
         if(entryParams.get("status") != null){
             try {
-                params.put("status", Optional.of(UserStatus.getUserStatusType(entryParams.get("status").toString())).orElse(UserStatus.getUserStatusType("active")));
+                params.put("status", UserStatus.getUserStatusType(entryParams.get("status").toString()));
             } catch (Exception e) {
                 e.printStackTrace();
 
@@ -348,7 +349,7 @@ public class DBFunctionImpl implements DBFunction {
     public Map<String, Object> deleteUser(String id) {
         LinkedHashMap<String, Object> params = new LinkedHashMap<>();
 
-        params.put("status", "deleted");
+        params.put("status", UserStatus.DELETED);
         params.put("deleted_at", Timestamp.valueOf(LocalDateTime.now()));
 
         LinkedHashMap<String, Object> where_params = new LinkedHashMap<>();
@@ -474,7 +475,7 @@ public class DBFunctionImpl implements DBFunction {
     public Map<String, Object> deleteProperty(String id) {
         LinkedHashMap<String, Object> params = new LinkedHashMap<>();
 
-        params.put("status", "deleted");
+        params.put("status", PropertyStatus.DELETED);
         params.put("deleted_at", Timestamp.valueOf(LocalDateTime.now()));
 
         LinkedHashMap<String, Object> where_params = new LinkedHashMap<>();
@@ -613,7 +614,7 @@ public class DBFunctionImpl implements DBFunction {
 
         if(entryParams.get("status") != null){
             try {
-                params.put("status", Optional.of(UserStatus.getUserStatusType(entryParams.get("status").toString())).orElse(UserStatus.getUserStatusType("active")));
+                params.put("status", UserStatus.getUserStatusType(entryParams.get("status").toString()));
             } catch (Exception e) {
                 e.printStackTrace();
 
