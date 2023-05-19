@@ -150,7 +150,7 @@ public class UserService {
         }else{
             return new HashMap<>() {{
                 put("response_code", "200");
-                put("description", "User not deleted");
+                put("description", "User not found");
                 put("data", null);
             }};
         }

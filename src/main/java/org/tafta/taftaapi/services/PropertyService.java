@@ -126,12 +126,12 @@ public class PropertyService {
         }
     }
     public Map<String, Object> deleteProperty(String id){
-        Map<String, Object> searchUserResponse = dbFunction.searchPropertyById(id);
+        Map<String, Object> searchPropertyResponse = dbFunction.searchPropertyById(id);
 
-        if(searchUserResponse != null){
-            Map<String, Object> deleteUserResponse = dbFunction.deleteProperty(id);
+        if(searchPropertyResponse != null){
+            Map<String, Object> deletePropertyResponse = dbFunction.deleteProperty(id);
 
-            if(deleteUserResponse != null){
+            if(deletePropertyResponse != null){
                 return new HashMap<>() {{
                     put("response_code", "200");
                     put("description", "Success");
@@ -147,7 +147,7 @@ public class PropertyService {
         }else{
             return new HashMap<>() {{
                 put("response_code", "200");
-                put("description", "Property not deleted");
+                put("description", "Property not found");
                 put("data", null);
             }};
         }
