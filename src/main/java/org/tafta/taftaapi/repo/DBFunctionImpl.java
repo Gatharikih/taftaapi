@@ -1163,6 +1163,8 @@ public class DBFunctionImpl implements DBFunction {
         params.put("created_by", Integer.parseInt(entryParams.getOrDefault("created_by", "0").toString()));
         params.put("updated_by", Integer.parseInt(entryParams.getOrDefault("updated_by", "0").toString()));
 
+//        params.put("permissions", entryParams.get("permissions").toString());
+
         params = cleanMap(params);
 
         String sql;
