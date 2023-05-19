@@ -9,6 +9,7 @@ import org.apache.commons.codec.digest.HmacAlgorithms;
 import org.apache.commons.codec.digest.HmacUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.tafta.taftaapi.enums.CompanyStatus;
 import org.tafta.taftaapi.enums.PropertyStatus;
 import org.tafta.taftaapi.enums.UserStatus;
 
@@ -657,6 +658,299 @@ public class DBFunctionImpl implements DBFunction {
         LinkedHashMap<String, Object> where_param = new LinkedHashMap<>();
 
         String sql = "SELECT * FROM properties WHERE LOWER(status)=LOWER(:status) ORDER BY id, created_at ASC LIMIT :limit OFFSET :offset";
+
+        int limit = 50;
+
+        where_param.put("status", UserStatus.valueOf(queryParams.getOrDefault("status", "ACTIVE").toString()));
+        where_param.put("limit", limit);
+
+        if(queryParams.get("page_number") == null){
+            where_param.put("offset", 0);
+        }else{
+            where_param.put("offset", (Integer.parseInt(queryParams.getOrDefault("page_number", "0").toString()) - 1)* limit);
+        }
+
+        List<Map<String, Object>> property = NamedBaseExecute(sql, null, where_param, new MapResultHandler());
+
+        return property.size() > 0 ? property : null;
+    }
+    // </editor-fold>
+    //
+
+    /*-------------------- COMPANIES -------------------------*/
+
+    // <editor-fold default-state="collapsed" desc="searchCompanyById(String id)">
+    @Override
+    public Map<String, Object> searchCompanyById(String id) {
+        LinkedHashMap<String, Object> param = new LinkedHashMap<>();
+        String sql = "SELECT * FROM companies WHERE id=:id LIMIT 1";
+
+        param.put("id", Integer.parseInt(id));
+
+        List<Map<String, Object>> properties = NamedBaseExecute(sql, param, null, new MapResultHandler());
+
+        return properties.size() > 0 ? properties.get(0) : null;
+    }
+    // </editor-fold>
+    //
+    // <editor-fold default-state="collapsed" desc="searchCompanies(Map<String, Object> searchMap)">
+    @Override
+    public List<Map<String, Object>> searchCompanies(Map<String, Object> searchMap) {
+        LinkedHashMap<String, Object> param = new LinkedHashMap<>();
+        String searchTermsStr = "";
+        trackQuery = 0;
+
+        if(searchMap.get("county") != null){
+            if(trackQuery >= 1) {
+                searchTermsStr += " AND LOWER(county)=LOWER(" + searchMap.get("county").toString() + ")";
+            }else{
+                searchTermsStr += " LOWER(county)=LOWER(" + searchMap.get("county").toString() + ")";
+            }
+
+            trackQuery = trackQuery + 1;
+        }
+
+        if(searchMap.get("property_name") != null){
+            if(trackQuery >= 1){
+                searchTermsStr += " AND LOWER(property_name)=LOWER(" + searchMap.get("property_name").toString() + ")";
+            }else{
+                searchTermsStr += " LOWER(property_name)=LOWER(" + searchMap.get("property_name").toString() + ")";
+            }
+
+            trackQuery = trackQuery + 1;
+        }
+
+        if(searchMap.get("min_price") != null){
+            if(trackQuery >= 1) {
+                searchTermsStr += " AND CAST (property_price AS INTEGER) >= " + Integer.parseInt(searchMap.get("min_price").toString());
+            }else{
+                searchTermsStr += " CAST (property_price AS INTEGER) >= " + Integer.parseInt(searchMap.get("min_price").toString());
+            }
+
+            trackQuery = trackQuery + 1;
+        }
+
+        if(searchMap.get("max_price") != null){
+            if(trackQuery >= 1) {
+                searchTermsStr += " AND CAST (property_price AS INTEGER) <= " + Integer.parseInt(searchMap.get("max_price").toString());
+            }else{
+                searchTermsStr += " CAST (property_price AS INTEGER) <= " + Integer.parseInt(searchMap.get("max_price").toString());
+            }
+        }
+
+        if(searchMap.get("property_price") != null){
+            if(trackQuery >= 1) {
+                searchTermsStr += " and property_price=" + searchMap.get("property_price").toString();
+            }else{
+                searchTermsStr += " property_price=" + searchMap.get("property_price").toString();
+            }
+        }
+
+        if(searchMap.get("description") != null){
+            if(trackQuery >= 1) {
+                searchTermsStr += " and LOWER(property_description) LIKE LOWER('%" + searchMap.get("description").toString() + "%')";
+            }else{
+                searchTermsStr += " LOWER(property_description) LIKE LOWER('%" + searchMap.get("description").toString() + "%')";
+            }
+        }
+
+        if(searchMap.get("location") != null){
+            if(trackQuery >= 1) {
+                searchTermsStr += " and LOWER(location) LIKE LOWER('%" + searchMap.get("location").toString() + "%')";
+            }else{
+                searchTermsStr += " LOWER(location) LIKE LOWER('%" + searchMap.get("location").toString() + "%')";
+            }
+        }
+
+        String sql = "SELECT * FROM properties WHERE " + searchTermsStr + " ORDER BY id, created_at ASC LIMIT 1";
+
+        log.error("sql11: " + sql);
+
+        List<Map<String, Object>> properties = NamedBaseExecute(sql, param, null, new MapResultHandler());
+
+        return properties.size() > 0 ? properties : null;
+    }
+    // </editor-fold>
+    //
+    // <editor-fold default-state="collapsed" desc="deleteCompany(String id)">
+    @Override
+    public Map<String, Object> deleteCompany(String id) {
+        LinkedHashMap<String, Object> params = new LinkedHashMap<>();
+
+        params.put("status", CompanyStatus.DELETED);
+        params.put("deleted_at", Timestamp.valueOf(LocalDateTime.now()));
+
+        LinkedHashMap<String, Object> where_params = new LinkedHashMap<>();
+        where_params.put("id", Integer.parseInt(id));
+
+        String sql;
+        String table = "companies";
+
+        where_params.put("id", Integer.parseInt(id));
+
+        sql = Models.UpdateString(table, params, where_params);
+
+        sql += " returning *";
+
+        List<Map<String, Object>> results = NamedBaseExecute(sql, params, where_params, new MapResultHandler());
+
+        if(results.size() > 0){
+            return results.get(0);
+        }
+
+        return null;
+    }
+    // </editor-fold>
+    //
+    // <editor-fold default-state="collapsed" desc="createCompany(Map<String, Object> entryParams)">
+    @Override
+    public List<Map<String, Object>> createCompany(Map<String, Object> entryParams) {
+        LinkedHashMap<String, Object> params = new LinkedHashMap<>();
+
+        params.put("company_address", entryParams.get("company_address").toString());
+        params.put("company_description", entryParams.get("company_description").toString());
+        params.put("company_email", entryParams.get("company_email").toString());
+        params.put("company_name", entryParams.get("company_name").toString());
+
+        params.put("password", entryParams.get("password").toString());
+        params.put("contact_person", entryParams.get("contact_person").toString());
+        params.put("created_at", Timestamp.valueOf(LocalDateTime.now()));
+        params.put("updated_at", Timestamp.valueOf(LocalDateTime.now()));
+        params.put("published_at", Timestamp.valueOf(LocalDateTime.now()));
+        params.put("api_key", entryParams.get("api_key").toString());
+        params.put("api_password", entryParams.get("api_password").toString());
+//        params.put("api_access", entryParams.get("api_access").toString());
+        params.put("created_by", Integer.parseInt(entryParams.getOrDefault("created_by", "0").toString()));
+        params.put("updated_by", Integer.parseInt(entryParams.getOrDefault("updated_by", "0").toString()));
+
+        if(entryParams.get("company_id") != null){
+            params.put("company_id", entryParams.get("company_id").toString());
+        }else{
+            String propertyId = UUID.randomUUID().toString();
+
+            params.put("company_id", propertyId);
+        }
+
+        if(entryParams.get("status") != null){
+            try {
+                params.put("status", Optional.of(CompanyStatus.getCompanyStatusType(entryParams.get("status").toString())).orElse(UserStatus.getUserStatusType("active")));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        params = cleanMap(params);
+
+        String sql;
+        String table = "properties";
+
+        sql = Models.InsertString(table, params);
+        sql += " returning *";
+
+        List<Map<String, Object>> results = NamedBaseExecute(sql, params, null, new MapResultHandler());
+
+        if(results.size() > 0){
+            return results;
+        }
+
+        return null;
+    }
+    // </editor-fold>
+    //
+    // <editor-fold default-state="collapsed" desc="updateCompany(Map<String, Object> entryParams)">
+    @Override
+    public List<Map<String, Object>> updateCompany(Map<String, Object> entryParams) {
+        LinkedHashMap<String, Object> params = new LinkedHashMap<>();
+
+        if(entryParams.get("password") != null) {
+            params.put("password", entryParams.get("password").toString());
+        }
+
+        if(entryParams.get("company_name") != null) {
+            params.put("company_name", entryParams.get("company_name").toString());
+        }
+
+        if(entryParams.get("company_description") != null) {
+            params.put("company_description", entryParams.get("company_description").toString());
+        }
+
+        if(entryParams.get("company_address") != null) {
+            params.put("company_address", entryParams.get("company_address").toString());
+        }
+
+        if(entryParams.get("company_email") != null) {
+            params.put("company_email", entryParams.get("company_email").toString());
+        }
+
+        if(entryParams.get("contact_person") != null) {
+            params.put("contact_person", entryParams.get("contact_person").toString());
+        }
+
+        params.put("updated_at", Timestamp.valueOf(LocalDateTime.now()));
+
+        if(entryParams.get("published_at") != null) {
+            params.put("published_at", Timestamp.valueOf(LocalDateTime.now()));
+        }
+
+        if(entryParams.get("api_password") != null){
+            params.put("api_password", entryParams.get("api_password").toString());
+        }
+
+        if(entryParams.get("api_key") != null){
+            params.put("api_key", entryParams.get("api_key").toString());
+        }
+
+        params.put("updated_by", Integer.parseInt(entryParams.getOrDefault("updated_by", "0").toString()));
+
+        if(entryParams.get("status") != null){
+            try {
+                params.put("status", CompanyStatus.getCompanyStatusType(entryParams.get("status").toString()));
+            } catch (Exception e) {
+                e.printStackTrace();
+
+                throw new RuntimeException(e);
+            }
+        }
+
+        if(entryParams.get("verified") != null){
+            params.put("verified", Boolean.parseBoolean(entryParams.getOrDefault("verified", false).toString()));
+        }
+
+        params.put("updated_at", Timestamp.valueOf(LocalDateTime.now()));
+
+        params = cleanMap(params);
+
+        LinkedHashMap<String, Object> where_params = new LinkedHashMap<>();
+
+        String sql;
+        String table = "properties";
+
+        if(entryParams.get("id") != null) {
+            where_params.put("id", Integer.parseInt(entryParams.get("id").toString()));
+        }else{
+            return null;
+        }
+
+        sql = Models.UpdateString(table, params, where_params);
+
+        sql += " returning *";
+
+        List<Map<String, Object>> results = NamedBaseExecute(sql, params, where_params, new MapResultHandler());
+
+        if(results.size() > 0){
+            return results;
+        }
+
+        return null;
+    }
+    // </editor-fold>
+    //
+    // <editor-fold default-state="collapsed" desc="listAllCompanies(Map<String, Object> queryParams) ">
+    @Override
+    public List<Map<String, Object>> listAllCompanies(Map<String, Object> queryParams) {
+        LinkedHashMap<String, Object> where_param = new LinkedHashMap<>();
+
+        String sql = "SELECT * FROM companies WHERE LOWER(status)=LOWER(:status) ORDER BY id, created_at ASC LIMIT :limit OFFSET :offset";
 
         int limit = 50;
 

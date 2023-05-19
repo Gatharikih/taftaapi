@@ -24,4 +24,11 @@ public interface DBFunction {
     List<Map<String, Object>> createProperty(Map<String, Object> entryParams);
     List<Map<String, Object>> updateProperty(Map<String, Object> entryParams);
     List<Map<String, Object>> listAllProperties(Map<String, Object> queryParams);
+
+    Map<String, Object> searchCompanyById(String id);
+    List<Map<String, Object>> searchCompanies(Map<String, Object> searchMap);
+    Map<String, Object> deleteCompany(String id);
+    List<Map<String, Object>> createCompany(Map<String, Object> entryParams);
+    List<Map<String, Object>> updateCompany(Map<String, Object> entryParams);
+    List<Map<String, Object>> listAllCompanies(Map<String, Object> queryParams);
 }
