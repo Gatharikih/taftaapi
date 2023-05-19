@@ -636,7 +636,11 @@ public class DBFunctionImpl implements DBFunction {
         String sql;
         String table = "properties";
 
-        where_params.put("id", Integer.parseInt(entryParams.get("id").toString()));
+        if(entryParams.get("id") != null) {
+            where_params.put("id", Integer.parseInt(entryParams.get("id").toString()));
+        }else{
+            return null;
+        }
 
         sql = Models.UpdateString(table, params, where_params);
 

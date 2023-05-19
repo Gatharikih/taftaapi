@@ -42,6 +42,8 @@ public class PropertyService {
         Map<String, Object> propertyResponse = dbFunction.searchPropertyById(propertyId);
 
         if (propertyResponse != null) {
+            propertyParams.put("id", propertyId);
+
             List<Map<String, Object>> updatePropertyResponse = dbFunction.updateProperty(propertyParams);
 
             if(updatePropertyResponse != null){
