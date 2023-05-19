@@ -31,4 +31,16 @@ public interface DBFunction {
     List<Map<String, Object>> createCompany(Map<String, Object> entryParams);
     List<Map<String, Object>> updateCompany(Map<String, Object> entryParams);
     List<Map<String, Object>> listAllCompanies(Map<String, Object> queryParams);
+
+    Map<String, Object> searchPermissionById(String id);
+    Map<String, Object> deletePermission(String id);
+    List<Map<String, Object>> createPermission(Map<String, Object> entryParams);
+    List<Map<String, Object>> updatePermission(Map<String, Object> entryParams);
+    List<Map<String, Object>> listAllPermissions(Map<String, Object> queryParams);
+
+    Map<String, Object> searchRoleById(String id);
+    Map<String, Object> deleteRole(String id);
+    List<Map<String, Object>> createRole(Map<String, Object> entryParams);
+    List<Map<String, Object>> updateRole(Map<String, Object> entryParams);
+    List<Map<String, Object>> listAllRoles(Map<String, Object> queryParams);
 }

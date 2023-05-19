@@ -969,4 +969,283 @@ public class DBFunctionImpl implements DBFunction {
     }
     // </editor-fold>
     //
+
+    /*-------------------- PERMISSIONS -------------------------*/
+
+    // <editor-fold default-state="collapsed" desc="searchPermissionById(String id)">
+    @Override
+    public Map<String, Object> searchPermissionById(String id) {
+        LinkedHashMap<String, Object> param = new LinkedHashMap<>();
+        String sql = "SELECT * FROM permissions WHERE id=:id LIMIT 1";
+
+        param.put("id", Integer.parseInt(id));
+
+        List<Map<String, Object>> properties = NamedBaseExecute(sql, param, null, new MapResultHandler());
+
+        return properties.size() > 0 ? properties.get(0) : null;
+    }
+    // </editor-fold>
+    //
+    // <editor-fold default-state="collapsed" desc="deletePermission(String id)">
+    @Override
+    public Map<String, Object> deletePermission(String id) {
+        LinkedHashMap<String, Object> params = new LinkedHashMap<>();
+
+        LinkedHashMap<String, Object> where_params = new LinkedHashMap<>();
+        where_params.put("id", Integer.parseInt(id));
+
+        String sql;
+        String table = "permissions";
+
+        where_params.put("id", Integer.parseInt(id));
+
+        sql = Models.UpdateString(table, params, where_params);
+
+        sql += " returning *";
+
+        List<Map<String, Object>> results = NamedBaseExecute(sql, params, where_params, new MapResultHandler());
+
+        if(results.size() > 0){
+            return results.get(0);
+        }
+
+        return null;
+    }
+    // </editor-fold>
+    //
+    // <editor-fold default-state="collapsed" desc="createPermission(Map<String, Object> entryParams)">
+    @Override
+    public List<Map<String, Object>> createPermission(Map<String, Object> entryParams) {
+        LinkedHashMap<String, Object> params = new LinkedHashMap<>();
+
+        params.put("action", entryParams.get("action").toString());
+        params.put("description", entryParams.get("description").toString());
+        params.put("created_at", Timestamp.valueOf(LocalDateTime.now()));
+        params.put("updated_at", Timestamp.valueOf(LocalDateTime.now()));
+        params.put("created_by", Integer.parseInt(entryParams.getOrDefault("created_by", "0").toString()));
+        params.put("updated_by", Integer.parseInt(entryParams.getOrDefault("updated_by", "0").toString()));
+
+        params = cleanMap(params);
+
+        String sql;
+        String table = "permissions";
+
+        sql = Models.InsertString(table, params);
+        sql += " returning *";
+
+        List<Map<String, Object>> results = NamedBaseExecute(sql, params, null, new MapResultHandler());
+
+        if(results.size() > 0){
+            return results;
+        }
+
+        return null;
+    }
+    // </editor-fold>
+    //
+    // <editor-fold default-state="collapsed" desc="updatePermission(Map<String, Object> entryParams)">
+    @Override
+    public List<Map<String, Object>> updatePermission(Map<String, Object> entryParams) {
+        LinkedHashMap<String, Object> params = new LinkedHashMap<>();
+
+        if(entryParams.get("description") != null) {
+            params.put("description", entryParams.get("description").toString());
+        }
+
+        params.put("updated_at", Timestamp.valueOf(LocalDateTime.now()));
+        params.put("created_by", Integer.parseInt(entryParams.getOrDefault("created_by", "0").toString()));
+        params.put("updated_by", Integer.parseInt(entryParams.getOrDefault("updated_by", "0").toString()));
+
+        params = cleanMap(params);
+
+        LinkedHashMap<String, Object> where_params = new LinkedHashMap<>();
+
+        String sql;
+        String table = "permissions";
+
+        if(entryParams.get("id") != null) {
+            where_params.put("id", Integer.parseInt(entryParams.get("id").toString()));
+        }else{
+            return null;
+        }
+
+        sql = Models.UpdateString(table, params, where_params);
+
+        sql += " returning *";
+
+        List<Map<String, Object>> results = NamedBaseExecute(sql, params, where_params, new MapResultHandler());
+
+        if(results.size() > 0){
+            return results;
+        }
+
+        return null;
+    }
+    // </editor-fold>
+    //
+    // <editor-fold default-state="collapsed" desc="listAllPermissions(Map<String, Object> queryParams) ">
+    @Override
+    public List<Map<String, Object>> listAllPermissions(Map<String, Object> queryParams) {
+        LinkedHashMap<String, Object> where_param = new LinkedHashMap<>();
+
+        String sql = "SELECT * FROM permissions ORDER BY id, created_at ASC LIMIT :limit OFFSET :offset";
+
+        int limit = 50;
+
+        where_param.put("limit", limit);
+
+        if(queryParams.get("page_number") == null){
+            where_param.put("offset", 0);
+        }else{
+            where_param.put("offset", (Integer.parseInt(queryParams.getOrDefault("page_number", "0").toString()) - 1)* limit);
+        }
+
+        List<Map<String, Object>> property = NamedBaseExecute(sql, null, where_param, new MapResultHandler());
+
+        return property.size() > 0 ? property : null;
+    }
+    // </editor-fold>
+    //
+
+    /*-------------------- ROLES -------------------------*/
+
+    // <editor-fold default-state="collapsed" desc="searchRoleById(String id)">
+    @Override
+    public Map<String, Object> searchRoleById(String id) {
+        LinkedHashMap<String, Object> param = new LinkedHashMap<>();
+        String sql = "SELECT * FROM roles WHERE id=:id LIMIT 1";
+
+        param.put("id", Integer.parseInt(id));
+
+        List<Map<String, Object>> properties = NamedBaseExecute(sql, param, null, new MapResultHandler());
+
+        return properties.size() > 0 ? properties.get(0) : null;
+    }
+    // </editor-fold>
+    //
+    // <editor-fold default-state="collapsed" desc="deleteRole(String id)">
+    @Override
+    public Map<String, Object> deleteRole(String id) {
+        LinkedHashMap<String, Object> params = new LinkedHashMap<>();
+
+        LinkedHashMap<String, Object> where_params = new LinkedHashMap<>();
+        where_params.put("id", Integer.parseInt(id));
+
+        String sql;
+        String table = "roles";
+
+        where_params.put("id", Integer.parseInt(id));
+
+        sql = Models.UpdateString(table, params, where_params);
+
+        sql += " returning *";
+
+        List<Map<String, Object>> results = NamedBaseExecute(sql, params, where_params, new MapResultHandler());
+
+        if(results.size() > 0){
+            return results.get(0);
+        }
+
+        return null;
+    }
+    // </editor-fold>
+    //
+    // <editor-fold default-state="collapsed" desc="createRole(Map<String, Object> entryParams)">
+    @Override
+    public List<Map<String, Object>> createRole(Map<String, Object> entryParams) {
+        LinkedHashMap<String, Object> params = new LinkedHashMap<>();
+
+        params.put("name", entryParams.get("action").toString());
+        params.put("description", entryParams.get("description").toString());
+        params.put("type", entryParams.get("type").toString());
+        params.put("created_at", Timestamp.valueOf(LocalDateTime.now()));
+        params.put("updated_at", Timestamp.valueOf(LocalDateTime.now()));
+        params.put("created_by", Integer.parseInt(entryParams.getOrDefault("created_by", "0").toString()));
+        params.put("updated_by", Integer.parseInt(entryParams.getOrDefault("updated_by", "0").toString()));
+
+        params = cleanMap(params);
+
+        String sql;
+        String table = "roles";
+
+        sql = Models.InsertString(table, params);
+        sql += " returning *";
+
+        List<Map<String, Object>> results = NamedBaseExecute(sql, params, null, new MapResultHandler());
+
+        if(results.size() > 0){
+            return results;
+        }
+
+        return null;
+    }
+    // </editor-fold>
+    //
+    // <editor-fold default-state="collapsed" desc="updateRole(Map<String, Object> entryParams)">
+    @Override
+    public List<Map<String, Object>> updateRole(Map<String, Object> entryParams) {
+        LinkedHashMap<String, Object> params = new LinkedHashMap<>();
+
+        if(entryParams.get("description") != null) {
+            params.put("description", entryParams.get("description").toString());
+        }
+
+        if(entryParams.get("type") != null) {
+            params.put("type", entryParams.get("type").toString());
+        }
+
+        params.put("updated_at", Timestamp.valueOf(LocalDateTime.now()));
+        params.put("created_by", Integer.parseInt(entryParams.getOrDefault("created_by", "0").toString()));
+        params.put("updated_by", Integer.parseInt(entryParams.getOrDefault("updated_by", "0").toString()));
+
+        params = cleanMap(params);
+
+        LinkedHashMap<String, Object> where_params = new LinkedHashMap<>();
+
+        String sql;
+        String table = "roles";
+
+        if(entryParams.get("id") != null) {
+            where_params.put("id", Integer.parseInt(entryParams.get("id").toString()));
+        }else{
+            return null;
+        }
+
+        sql = Models.UpdateString(table, params, where_params);
+
+        sql += " returning *";
+
+        List<Map<String, Object>> results = NamedBaseExecute(sql, params, where_params, new MapResultHandler());
+
+        if(results.size() > 0){
+            return results;
+        }
+
+        return null;
+    }
+    // </editor-fold>
+    //
+    // <editor-fold default-state="collapsed" desc="listAllRoles(Map<String, Object> queryParams) ">
+    @Override
+    public List<Map<String, Object>> listAllRoles(Map<String, Object> queryParams) {
+        LinkedHashMap<String, Object> where_param = new LinkedHashMap<>();
+
+        String sql = "SELECT * FROM roles ORDER BY id, created_at ASC LIMIT :limit OFFSET :offset";
+
+        int limit = 50;
+
+        where_param.put("limit", limit);
+
+        if(queryParams.get("page_number") == null){
+            where_param.put("offset", 0);
+        }else{
+            where_param.put("offset", (Integer.parseInt(queryParams.getOrDefault("page_number", "0").toString()) - 1)* limit);
+        }
+
+        List<Map<String, Object>> property = NamedBaseExecute(sql, null, where_param, new MapResultHandler());
+
+        return property.size() > 0 ? property : null;
+    }
+    // </editor-fold>
+    //
 }
