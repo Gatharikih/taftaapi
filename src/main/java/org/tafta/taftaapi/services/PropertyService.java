@@ -74,13 +74,13 @@ public class PropertyService {
         }
     }
     public Map<String, Object> searchProperties(Map<String, Object> searchMap){
-        List<Map<String, Object>> searchUserResponse = dbFunction.searchProperties(searchMap);
+        List<Map<String, Object>> searchPropertiesResponse = dbFunction.searchProperties(searchMap);
 
-        if(searchUserResponse != null){
+        if(searchPropertiesResponse != null){
             return new HashMap<>() {{
                 put("response_code", "200");
                 put("description", "Success");
-                put("data", searchUserResponse);
+                put("data", searchPropertiesResponse);
             }};
         }else{
             return new HashMap<>() {{
@@ -91,13 +91,14 @@ public class PropertyService {
         }
     }
     public Map<String, Object> listAllProperties(Map<String, Object> queryParams){
-        List<Map<String, Object>> listAllUsersResponse = dbFunction.listAllProperties(queryParams);
+        List<Map<String, Object>> listAllPropertiesResponse = dbFunction.listAllProperties(queryParams);
 
-        if(listAllUsersResponse != null){
+        if(listAllPropertiesResponse != null){
             return new HashMap<>() {{
                 put("response_code", "200");
                 put("description", "Success");
-                put("data", listAllUsersResponse);
+                put("data", listAllPropertiesResponse);
+                put("page_size", listAllPropertiesResponse.size());
             }};
         }else{
             return new HashMap<>() {{
@@ -108,13 +109,13 @@ public class PropertyService {
         }
     }
     public Map<String, Object> searchPropertyById(String id){
-        Map<String, Object> searchUserResponse = dbFunction.searchPropertyById(id);
+        Map<String, Object> searchPropertyResponse = dbFunction.searchPropertyById(id);
 
-        if(searchUserResponse != null){
+        if(searchPropertyResponse != null){
             return new HashMap<>() {{
                 put("response_code", "200");
                 put("description", "Success");
-                put("data", searchUserResponse);
+                put("data", searchPropertyResponse);
             }};
         }else{
             return new HashMap<>() {{

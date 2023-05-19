@@ -83,6 +83,7 @@ public class UserService {
                 put("response_code", "200");
                 put("description", "Success");
                 put("data", searchUserResponse);
+                put("page_size", searchUserResponse.size());
             }};
         }else{
             return new HashMap<>() {{
@@ -100,6 +101,7 @@ public class UserService {
                 put("response_code", "200");
                 put("description", "Success");
                 put("data", listAllUsersResponse);
+                put("page_size", listAllUsersResponse.size());
             }};
         }else{
             return new HashMap<>() {{

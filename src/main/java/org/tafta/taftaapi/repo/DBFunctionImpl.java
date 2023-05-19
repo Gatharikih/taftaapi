@@ -654,26 +654,24 @@ public class DBFunctionImpl implements DBFunction {
     // <editor-fold default-state="collapsed" desc="List<Map<String, Object>>listAllProperties(String pageNumber) ">
     @Override
     public List<Map<String, Object>> listAllProperties(Map<String, Object> queryParams) {
-        LinkedHashMap<String, Object> params = new LinkedHashMap<>();
         LinkedHashMap<String, Object> where_param = new LinkedHashMap<>();
-        String sql = "SELECT * FROM properties WHERE status=:status ORDER BY id, created_at ASC LIMIT :limit OFFSET :offset";
 
-        params = cleanMap(params);
+        String sql = "SELECT * FROM properties WHERE LOWER(status)=LOWER(:status) ORDER BY id, created_at ASC LIMIT :limit OFFSET :offset";
 
         int limit = 50;
 
-        where_param.put("status", queryParams.getOrDefault("status", "ACTIVE").toString());
+        where_param.put("status", UserStatus.valueOf(queryParams.getOrDefault("status", "ACTIVE").toString()));
         where_param.put("limit", limit);
 
         if(queryParams.get("page_number") == null){
             where_param.put("offset", 0);
         }else{
-            where_param.put("offset", Integer.parseInt(queryParams.getOrDefault("page_number", "0").toString()) * limit);
+            where_param.put("offset", (Integer.parseInt(queryParams.getOrDefault("page_number", "0").toString()) - 1)* limit);
         }
 
-        List<Map<String, Object>> user = NamedBaseExecute(sql, params, where_param, new MapResultHandler());
+        List<Map<String, Object>> property = NamedBaseExecute(sql, null, where_param, new MapResultHandler());
 
-        return user.size() > 0 ? user : null;
+        return property.size() > 0 ? property : null;
     }
     // </editor-fold>
     //
