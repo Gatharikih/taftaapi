@@ -22,7 +22,7 @@ public class RoleService {
     private DBFunctionImpl dbFunction;
 
     public Map<String, Object> createRole(Map<String, Object> roleParams){
-        <Map<String, Object> createRoleResponse = dbFunction.createRole(roleParams);
+        Map<String, Object> createRoleResponse = dbFunction.createRole(roleParams);
 
         if(createRoleResponse != null){
             return new HashMap<>() {{
