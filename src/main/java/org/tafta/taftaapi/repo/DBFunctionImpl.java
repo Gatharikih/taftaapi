@@ -1188,7 +1188,7 @@ public class DBFunctionImpl implements DBFunction {
         params.put("created_by", entryParams.getOrDefault("created_by", "0").toString());
         params.put("updated_by", entryParams.getOrDefault("updated_by", "0").toString());
 
-        List permissionList = (List) entryParams.get("permissions");
+        List<Object> permissionList = (List) entryParams.get("permissions");
 
         try {
             numOfOperations = 0;
