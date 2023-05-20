@@ -1155,7 +1155,7 @@ public class DBFunctionImpl implements DBFunction {
     //
     // <editor-fold default-state="collapsed" desc="createRole(Map<String, Object> entryParams)">
     @Override
-    public List<Map<String, Object>> createRole(Map<String, Object> entryParams) {
+    public Map<String, Object> createRole(Map<String, Object> entryParams) {
         LinkedHashMap<String, Object> params = new LinkedHashMap<>();
         String roleIdNum;
 
@@ -1226,7 +1226,7 @@ public class DBFunctionImpl implements DBFunction {
                 }
 
                 if (numOfOperations == permissionList.size()) {
-                    return results;
+                    return results.get(0);
                 }
             }
         } catch (Exception e) {

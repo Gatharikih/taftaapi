@@ -22,9 +22,9 @@ public class RoleService {
     private DBFunctionImpl dbFunction;
 
     public Map<String, Object> createRole(Map<String, Object> roleParams){
-        List<Map<String, Object>> createRoleResponse = dbFunction.createRole(roleParams);
+        <Map<String, Object> createRoleResponse = dbFunction.createRole(roleParams);
 
-        if(createRoleResponse != null && createRoleResponse.size() > 0){
+        if(createRoleResponse != null){
             return new HashMap<>() {{
                 put("response_code", "201");
                 put("description", "Success");
