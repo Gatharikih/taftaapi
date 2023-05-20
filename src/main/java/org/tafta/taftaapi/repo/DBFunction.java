@@ -1,5 +1,7 @@
 package org.tafta.taftaapi.repo;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 import java.util.List;
 import java.util.Map;
 
@@ -40,7 +42,7 @@ public interface DBFunction {
 
     Map<String, Object> searchRoleById(String id);
     Map<String, Object> deleteRole(String id);
-    List<Map<String, Object>> createRole(Map<String, Object> entryParams);
+    List<Map<String, Object>> createRole(Map<String, Object> entryParams) throws JsonProcessingException;
     List<Map<String, Object>> updateRole(Map<String, Object> entryParams);
     List<Map<String, Object>> listAllRoles(Map<String, Object> queryParams);
 }

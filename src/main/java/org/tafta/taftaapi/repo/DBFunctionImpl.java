@@ -1,9 +1,10 @@
 package org.tafta.taftaapi.repo;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jodd.db.DbOom;
 import jodd.db.DbQuery;
-import jodd.props.Props;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.HmacAlgorithms;
 import org.apache.commons.codec.digest.HmacUtils;
@@ -23,6 +24,7 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.Semaphore;
 
 /**
  * @author Gathariki Ngigi
@@ -41,6 +43,7 @@ public class DBFunctionImpl implements DBFunction {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private static DbOom dbOom = null;
     int trackQuery;
+    int numOfOperations;
 
     public enum LogType {ERRORS, APIREQUESTS, RESPONSES, MONEYTRANS, COOPCALLBACK}
 
@@ -820,8 +823,8 @@ public class DBFunctionImpl implements DBFunction {
         params.put("api_key", entryParams.get("api_key").toString());
         params.put("api_password", entryParams.get("api_password").toString());
 //        params.put("api_access", entryParams.get("api_access").toString());
-        params.put("created_by", Integer.parseInt(entryParams.getOrDefault("created_by", "0").toString()));
-        params.put("updated_by", Integer.parseInt(entryParams.getOrDefault("updated_by", "0").toString()));
+        params.put("created_by", entryParams.getOrDefault("created_by", "0").toString());
+        params.put("updated_by", entryParams.getOrDefault("updated_by", "0").toString());
 
         if(entryParams.get("company_id") != null){
             params.put("company_id", entryParams.get("company_id").toString());
@@ -1022,8 +1025,8 @@ public class DBFunctionImpl implements DBFunction {
         params.put("description", entryParams.get("description").toString());
         params.put("created_at", Timestamp.valueOf(LocalDateTime.now()));
         params.put("updated_at", Timestamp.valueOf(LocalDateTime.now()));
-        params.put("created_by", Integer.parseInt(entryParams.getOrDefault("created_by", "0").toString()));
-        params.put("updated_by", Integer.parseInt(entryParams.getOrDefault("updated_by", "0").toString()));
+        params.put("created_by", entryParams.getOrDefault("created_by", "0").toString());
+        params.put("updated_by", entryParams.getOrDefault("updated_by", "0").toString());
 
         params = cleanMap(params);
 
@@ -1053,8 +1056,8 @@ public class DBFunctionImpl implements DBFunction {
         }
 
         params.put("updated_at", Timestamp.valueOf(LocalDateTime.now()));
-        params.put("created_by", Integer.parseInt(entryParams.getOrDefault("created_by", "0").toString()));
-        params.put("updated_by", Integer.parseInt(entryParams.getOrDefault("updated_by", "0").toString()));
+        params.put("created_by", entryParams.getOrDefault("created_by", "0").toString());
+        params.put("updated_by", entryParams.getOrDefault("updated_by", "0").toString());
 
         params = cleanMap(params);
 
@@ -1154,29 +1157,80 @@ public class DBFunctionImpl implements DBFunction {
     @Override
     public List<Map<String, Object>> createRole(Map<String, Object> entryParams) {
         LinkedHashMap<String, Object> params = new LinkedHashMap<>();
+        String roleIdNum;
 
-        params.put("name", entryParams.get("action").toString());
-        params.put("description", entryParams.get("description").toString());
-        params.put("type", entryParams.get("type").toString());
+        params.put("name", entryParams.get("name").toString());
+
+        if(entryParams.get("description") != null){
+            params.put("description", entryParams.get("description").toString());
+        }else {
+            params.put("description", null);
+        }
+
+        if(entryParams.get("role_id") != null){
+            roleIdNum = entryParams.get("role_id").toString();
+
+            params.put("role_id", roleIdNum);
+        }else {
+            roleIdNum = UUID.randomUUID().toString();
+
+            params.put("role_id", roleIdNum);
+        }
+
+        if(entryParams.get("type") != null){
+            params.put("type", entryParams.get("type").toString());
+        }else {
+            params.put("type", null);
+        }
+
         params.put("created_at", Timestamp.valueOf(LocalDateTime.now()));
         params.put("updated_at", Timestamp.valueOf(LocalDateTime.now()));
-        params.put("created_by", Integer.parseInt(entryParams.getOrDefault("created_by", "0").toString()));
-        params.put("updated_by", Integer.parseInt(entryParams.getOrDefault("updated_by", "0").toString()));
+        params.put("created_by", entryParams.getOrDefault("created_by", "0").toString());
+        params.put("updated_by", entryParams.getOrDefault("updated_by", "0").toString());
 
-//        params.put("permissions", entryParams.get("permissions").toString());
+        List permissionList = (List) entryParams.get("permissions");
 
-        params = cleanMap(params);
+        try {
+            numOfOperations = 0;
 
-        String sql;
-        String table = "roles";
+            params = cleanMap(params);
 
-        sql = Models.InsertString(table, params);
-        sql += " returning *";
+            String sql;
+            String table = "roles";
 
-        List<Map<String, Object>> results = NamedBaseExecute(sql, params, null, new MapResultHandler());
+            sql = Models.InsertString(table, params);
+            sql += " returning *";
 
-        if(results.size() > 0){
-            return results;
+            List<Map<String, Object>> results = NamedBaseExecute(sql, params, null, new MapResultHandler());
+
+            if(results.size() > 0){
+                while(numOfOperations < permissionList.size()) {
+                    permissionList.forEach(permission -> {
+                        String sql2;
+                        String table2 = "permissions_role_links";
+
+                        LinkedHashMap<String, Object> params2 = new LinkedHashMap<>();
+
+                        params2.put("permission_id", Integer.parseInt(String.valueOf(permission)));
+                        params2.put("role_id", roleIdNum);
+
+                        sql2 = Models.InsertString(table2, params2);
+                        sql2 += " returning *";
+
+                        List<Map<String, Object>> results2 = NamedBaseExecute(sql2, params2, null, new MapResultHandler());
+
+                        if (results2.size() > 0) {
+                            numOfOperations++;
+                        }
+                    });
+                }
+
+                if (numOfOperations == permissionList.size()) {
+                    return results;
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
 
         return null;
@@ -1197,8 +1251,8 @@ public class DBFunctionImpl implements DBFunction {
         }
 
         params.put("updated_at", Timestamp.valueOf(LocalDateTime.now()));
-        params.put("created_by", Integer.parseInt(entryParams.getOrDefault("created_by", "0").toString()));
-        params.put("updated_by", Integer.parseInt(entryParams.getOrDefault("updated_by", "0").toString()));
+        params.put("created_by", entryParams.getOrDefault("created_by", "0").toString());
+        params.put("updated_by", entryParams.getOrDefault("updated_by", "0").toString());
 
         params = cleanMap(params);
 

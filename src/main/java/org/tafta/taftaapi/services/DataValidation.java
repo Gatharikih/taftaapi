@@ -70,7 +70,7 @@ public class DataValidation {
                 errors.add(Errors.get(validationErrCode, fieldName + " cannot be null/empty"));
 
                 response.put("valid", "false");
-                response.put("errors", Errors.get(validationErrCode, fieldName + "cannot be null/empty"));
+                response.put("errors", Errors.get(validationErrCode, fieldName + " cannot be null/empty"));
 
                 break;
             }else{
