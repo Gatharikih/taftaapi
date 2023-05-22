@@ -15,9 +15,9 @@ public enum UserStatus {
             statusType = UserStatus.ACTIVE.name();
         }else if(type.equalsIgnoreCase("in-active") || type.equalsIgnoreCase("inactive")){
             statusType = UserStatus.INACTIVE.name();
-        }else if(type.equalsIgnoreCase("deleted")){
+        }else if(type.equalsIgnoreCase("deleted") || type.equalsIgnoreCase("delete")){
             statusType = UserStatus.DELETED.name();
-        }else if(type.equalsIgnoreCase("suspended")){
+        }else if(type.equalsIgnoreCase("suspended") || type.equalsIgnoreCase("suspend")){
             statusType = UserStatus.SUSPENDED.name();
         }else{
             throw new Exception("Unrecognized status");

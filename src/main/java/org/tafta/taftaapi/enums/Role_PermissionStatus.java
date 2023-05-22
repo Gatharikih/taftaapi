@@ -2,23 +2,21 @@ package org.tafta.taftaapi.enums;
 
 /**
  * @author Gathariki Ngigi
- * Created on May 19, 2023.
- * Time 1521h
+ * Created on May 20, 2023.
+ * Time 1634h
  */
-public enum CompanyStatus {
+public enum Role_PermissionStatus {
     ACTIVE, INACTIVE, DELETED, SUSPENDED;
 
-    public static String getCompanyStatusType(String type) throws Exception {
+    public static String getRole_PermissionStatusType(String type) throws Exception {
         String statusType;
 
         if(type.equalsIgnoreCase("active")){
-            statusType = CompanyStatus.ACTIVE.name();
+            statusType = Role_PermissionStatus.ACTIVE.name();
         }else if(type.equalsIgnoreCase("in-active") || type.equalsIgnoreCase("inactive")){
-            statusType = CompanyStatus.INACTIVE.name();
+            statusType = Role_PermissionStatus.INACTIVE.name();
         }else if(type.equalsIgnoreCase("deleted") || type.equalsIgnoreCase("delete")){
-            statusType = CompanyStatus.DELETED.name();
-        }else if(type.equalsIgnoreCase("suspended") || type.equalsIgnoreCase("suspend")){
-            statusType = CompanyStatus.SUSPENDED.name();
+            statusType = Role_PermissionStatus.DELETED.name();
         }else{
             throw new Exception("Unrecognized status");
         }

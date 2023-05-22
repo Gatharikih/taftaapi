@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tafta.taftaapi.enums.CompanyStatus;
 import org.tafta.taftaapi.enums.PropertyStatus;
+import org.tafta.taftaapi.enums.Role_PermissionStatus;
 import org.tafta.taftaapi.enums.UserStatus;
 
 import javax.crypto.Mac;
@@ -83,10 +84,12 @@ public class DBFunctionImpl implements DBFunction {
 
             if (whereCollection != null) {
                 for (Map.Entry<String, Object> param : whereCollection.entrySet()) {
+//                    log.error("param.getValue(): " + param.getValue() + " : " + param.getValue().getClass().getName());
                     query.setObject(paramIndex++, param.getValue());
                 }
             }
 
+            log.error("SQL:::: " + sql);
             if (handler == null) {
                 query.executeUpdate();
             } else {
@@ -994,6 +997,21 @@ public class DBFunctionImpl implements DBFunction {
     public Map<String, Object> deletePermission(String id) {
         LinkedHashMap<String, Object> params = new LinkedHashMap<>();
 
+        params.put("updated_at", Timestamp.valueOf(LocalDateTime.now()));
+        params.put("deleted_at", Timestamp.valueOf(LocalDateTime.now()));
+
+        try {
+            if(params.get("status") != null){
+                params.put("status", Role_PermissionStatus.getRole_PermissionStatusType(params.get("status").toString()));
+            }else{
+                params.put("status", Role_PermissionStatus.getRole_PermissionStatusType("delete"));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+
+            throw new RuntimeException(e);
+        }
+
         LinkedHashMap<String, Object> where_params = new LinkedHashMap<>();
         where_params.put("id", Integer.parseInt(id));
 
@@ -1091,16 +1109,26 @@ public class DBFunctionImpl implements DBFunction {
     public List<Map<String, Object>> listAllPermissions(Map<String, Object> queryParams) {
         LinkedHashMap<String, Object> where_param = new LinkedHashMap<>();
 
-        String sql = "SELECT * FROM permissions ORDER BY id, created_at ASC LIMIT :limit OFFSET :offset";
+        String sql = "SELECT * FROM permissions WHERE LOWER(status)=LOWER(:status) ORDER BY id, created_at ASC LIMIT :limit OFFSET :offset";
 
         int limit = 50;
 
         where_param.put("limit", limit);
 
+        if(queryParams.get("status") == null){
+            where_param.put("status", "ACTIVE");
+        }else{
+            try {
+                where_param.put("status", Role_PermissionStatus.getRole_PermissionStatusType(queryParams.get("status").toString()));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
         if(queryParams.get("page_number") == null){
             where_param.put("offset", 0);
         }else{
-            where_param.put("offset", (Integer.parseInt(queryParams.getOrDefault("page_number", "0").toString()) - 1)* limit);
+            where_param.put("offset", (Integer.parseInt(queryParams.get("page_number").toString()) - 1)* limit);
         }
 
         List<Map<String, Object>> property = NamedBaseExecute(sql, null, where_param, new MapResultHandler());
@@ -1130,6 +1158,21 @@ public class DBFunctionImpl implements DBFunction {
     @Override
     public Map<String, Object> deleteRole(String id) {
         LinkedHashMap<String, Object> params = new LinkedHashMap<>();
+
+        params.put("updated_at", Timestamp.valueOf(LocalDateTime.now()));
+        params.put("deleted_at", Timestamp.valueOf(LocalDateTime.now()));
+
+        try {
+            if(params.get("status") != null){
+                params.put("status", Role_PermissionStatus.getRole_PermissionStatusType(params.get("status").toString()));
+            }else{
+                params.put("status", Role_PermissionStatus.getRole_PermissionStatusType("delete"));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+
+            throw new RuntimeException(e);
+        }
 
         LinkedHashMap<String, Object> where_params = new LinkedHashMap<>();
         where_params.put("id", Integer.parseInt(id));
@@ -1286,17 +1329,29 @@ public class DBFunctionImpl implements DBFunction {
     public List<Map<String, Object>> listAllRoles(Map<String, Object> queryParams) {
         LinkedHashMap<String, Object> where_param = new LinkedHashMap<>();
 
-        String sql = "SELECT * FROM roles ORDER BY id, created_at ASC LIMIT :limit OFFSET :offset";
+        String sql = "SELECT * FROM roles WHERE LOWER(status)=LOWER(:status) ORDER BY id, created_at ASC LIMIT :limit OFFSET :offset";
 
         int limit = 50;
 
         where_param.put("limit", limit);
 
+        if(queryParams.get("status") == null){
+            where_param.put("status", "ACTIVE".toLowerCase());
+        }else{
+            try {
+                where_param.put("status", Role_PermissionStatus.getRole_PermissionStatusType(queryParams.get("status").toString().toLowerCase()));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
         if(queryParams.get("page_number") == null){
             where_param.put("offset", 0);
         }else{
-            where_param.put("offset", (Integer.parseInt(queryParams.getOrDefault("page_number", "0").toString()) - 1)* limit);
+            where_param.put("offset", (Integer.parseInt(queryParams.get("page_number").toString()) - 1) * limit);
         }
+
+        log.error("where_param: " + where_param);
 
         List<Map<String, Object>> property = NamedBaseExecute(sql, null, where_param, new MapResultHandler());
 
