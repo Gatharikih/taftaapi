@@ -43,6 +43,6 @@ public interface DBFunction {
     Map<String, Object> searchRoleById(String id);
     Map<String, Object> deleteRole(String id);
     Map<String, Object> createRole(Map<String, Object> entryParams) throws JsonProcessingException;
-    List<Map<String, Object>> updateRole(Map<String, Object> entryParams);
+    Map<String, Object> updateRole(Map<String, Object> entryParams);
     List<Map<String, Object>> listAllRoles(Map<String, Object> queryParams);
 }

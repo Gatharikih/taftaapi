@@ -1,10 +1,14 @@
 package org.tafta.taftaapi.enums;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * @author Gathariki Ngigi
  * Created on May 20, 2023.
  * Time 1634h
  */
+
+@Slf4j
 public enum Role_PermissionStatus {
     ACTIVE, INACTIVE, DELETED, SUSPENDED;
 

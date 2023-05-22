@@ -42,7 +42,7 @@ public class PermissionService {
         Map<String, Object> permissionResponse = dbFunction.searchPermissionById(permissionId);
 
         if (permissionResponse != null) {
-            permissionResponse.put("id", permissionId);
+            permissionParams.put("id", permissionId);
 
             List<Map<String, Object>> updateCompanyResponse = dbFunction.updatePermission(permissionParams);
 

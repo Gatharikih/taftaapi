@@ -39,27 +39,20 @@ public class RoleService {
         }
     }
     public Map<String, Object> updateRole(Map<String, Object> roleParams, String roleId){
-        Map<String, Object> roleResponse = dbFunction.searchPermissionById(roleId);
+        Map<String, Object> roleResponse = dbFunction.searchRoleById(roleId);
 
         if (roleResponse != null) {
-            roleResponse.put("id", roleId);
+            roleParams.put("id", roleId);
+            roleParams.put("role_id", roleResponse.get("role_id").toString());
 
-            List<Map<String, Object>> updateRoleResponse = dbFunction.updatePermission(roleParams);
+            Map<String, Object> updateRoleResponse = dbFunction.updateRole(roleParams);
 
             if(updateRoleResponse != null){
-                if(updateRoleResponse.size() > 0){
-                    return new HashMap<>() {{
-                        put("response_code", "201");
-                        put("description", "Success");
-                        put("data", updateRoleResponse);
-                    }};
-                }else{
-                    return new HashMap<>() {{
-                        put("response_code", "400");
-                        put("description", "Unrecognized status");
-                        put("data", null);
-                    }};
-                }
+                return new HashMap<>() {{
+                    put("response_code", "201");
+                    put("description", "Success");
+                    put("data", updateRoleResponse);
+                }};
             }else{
                 return new HashMap<>() {{
                     put("response_code", "200");
