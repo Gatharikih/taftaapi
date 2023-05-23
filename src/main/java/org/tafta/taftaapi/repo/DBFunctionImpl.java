@@ -88,16 +88,17 @@ public class DBFunctionImpl implements DBFunction {
 
             if (whereCollection != null) {
                 for (Map.Entry<String, Object> param : whereCollection.entrySet()) {
-//                    log.error("param.getValue(): " + param.getValue() + " : " + param.getValue().getClass().getName());
                     query.setObject(paramIndex++, param.getValue());
                 }
             }
 
-            log.error("SQL:::: " + sql);
             if (handler == null) {
                 query.executeUpdate();
             } else {
                 rs = query.execute();
+
+                log.error("getStatement: " + rs.getStatement());
+                log.error("rowDeleted: " + rs.rowDeleted());
             }
 
             try {
@@ -1043,8 +1044,12 @@ public class DBFunctionImpl implements DBFunction {
     public List<Map<String, Object>> createPermission(Map<String, Object> entryParams) {
         LinkedHashMap<String, Object> params = new LinkedHashMap<>();
 
-        params.put("action", entryParams.get("action").toString());
-        params.put("description", entryParams.get("description").toString());
+        params.put("action", entryParams.get("action").toString().toUpperCase());
+        if (entryParams.get("description") != null) {
+            params.put("description", entryParams.get("description").toString());
+        } else {
+            params.put("description", entryParams.get("action").toString().toLowerCase());
+        }
         params.put("created_at", Timestamp.valueOf(LocalDateTime.now()));
         params.put("updated_at", Timestamp.valueOf(LocalDateTime.now()));
         params.put("created_by", entryParams.getOrDefault("created_by", "0").toString());
@@ -1201,12 +1206,12 @@ public class DBFunctionImpl implements DBFunction {
         LinkedHashMap<String, Object> params = new LinkedHashMap<>();
         String roleIdNum;
 
-        params.put("name", entryParams.get("name").toString());
+        params.put("name", entryParams.get("name").toString().toUpperCase());
 
         if(entryParams.get("description") != null){
             params.put("description", entryParams.get("description").toString());
         }else {
-            params.put("description", null);
+            params.put("description", entryParams.get("name").toString().toLowerCase());
         }
 
         if(entryParams.get("role_id") != null){
@@ -1305,6 +1310,7 @@ public class DBFunctionImpl implements DBFunction {
         List<Object> unlikeElements = null;
 
         try {
+            Semaphore semaphore = new Semaphore(1);
             if(!orderedPermissionList.equals(allAssignedPermissionsOrdered)){
                 if(orderedPermissionList.size() > allAssignedPermissionsOrdered.size()){
                     // new permissions to add to role
@@ -1321,7 +1327,10 @@ public class DBFunctionImpl implements DBFunction {
 
             if (unlikeElements != null && unlikeElements.size() > 0) {
                 // Update Role-Permission tbl
+                semaphore.acquire();
+
                 while (numOfOperations < unlikeElements.size()) {
+
                     unlikeElements.forEach(permission -> {
                         String rolePermissionLink_sql = "";
                         String table2 = "permissions_role_links";
@@ -1338,13 +1347,11 @@ public class DBFunctionImpl implements DBFunction {
 
                         if(stripePermission && !addNewPermission){
                             rolePermissionLink_sql = "DELETE FROM permissions_role_links WHERE permission_id=:permission_id AND role_id=:role_id";
+                            rolePermissionLink_sql += " returning *";
 
                             rolePermissionLink_params.put("permission_id", Integer.parseInt(permission.toString()));
                             rolePermissionLink_params.put("role_id", entryParams.get("role_id").toString());
                         }
-
-                        log.error("rolePermissionLink_sql: " + rolePermissionLink_sql);
-                        log.error("rolePermissionLink_params: " + rolePermissionLink_params);
 
                         List<Map<String, Object>> rolePermissionLinkResult = NamedBaseExecute(rolePermissionLink_sql, null, rolePermissionLink_params, new MapResultHandler());
 
@@ -1354,43 +1361,50 @@ public class DBFunctionImpl implements DBFunction {
                     });
                 }
 
-                if (numOfOperations == permissionList.size()) {
-                    // Update Role tbl
-                    String rolePermissionLinkUpdate_sql;
-                    String table = "roles";
-                    LinkedHashMap<String, Object> roleParams = new LinkedHashMap<>();
-
-                    if(entryParams.get("description") != null) {
-                        roleParams.put("description", entryParams.get("description").toString());
-                    }
-
-                    if(entryParams.get("type") != null) {
-                        roleParams.put("type", entryParams.get("type").toString());
-                    }
-
-                    roleParams.put("updated_at", Timestamp.valueOf(LocalDateTime.now()));
-                    roleParams.put("updated_by", entryParams.getOrDefault("updated_by", "0").toString());
-
-                    roleParams = cleanMap(roleParams);
-
-                    LinkedHashMap<String, Object> where_params = new LinkedHashMap<>();
-
-                    if(entryParams.get("id") != null) {
-                        where_params.put("id", Integer.parseInt(entryParams.get("id").toString()));
-                    }else{
-                        return null;
-                    }
-
-                    rolePermissionLinkUpdate_sql = Models.UpdateString(table, roleParams, where_params);
-                    rolePermissionLinkUpdate_sql += " returning *";
-
-                    List<Map<String, Object>> roleUpdateResult = NamedBaseExecute(rolePermissionLinkUpdate_sql, roleParams, where_params, new MapResultHandler());
-
-                    return roleUpdateResult.size() > 0 ? roleUpdateResult.get(0) : null;
+                if((numOfOperations + 1) > unlikeElements.size()){
+                    log.error("semaphore.release(1): 1 ");
+                    semaphore.release(1);
                 }
             }
+
+            if (semaphore.tryAcquire(1)) {
+                log.error("semaphore.acquire(1): 2 ");
+                // Update Role tbl
+                String rolePermissionLinkUpdate_sql;
+                String table = "roles";
+                LinkedHashMap<String, Object> roleParams = new LinkedHashMap<>();
+
+                if(entryParams.get("description") != null) {
+                    roleParams.put("description", entryParams.get("description").toString());
+                }
+
+                if(entryParams.get("type") != null) {
+                    roleParams.put("type", entryParams.get("type").toString());
+                }
+
+                roleParams.put("updated_at", Timestamp.valueOf(LocalDateTime.now()));
+                roleParams.put("updated_by", entryParams.getOrDefault("updated_by", "0").toString());
+
+                roleParams = cleanMap(roleParams);
+
+                LinkedHashMap<String, Object> where_params = new LinkedHashMap<>();
+
+                if(entryParams.get("id") != null) {
+                    where_params.put("id", Integer.parseInt(entryParams.get("id").toString()));
+                }else{
+                    return null;
+                }
+
+                rolePermissionLinkUpdate_sql = Models.UpdateString(table, roleParams, where_params);
+                rolePermissionLinkUpdate_sql += " returning *";
+
+                List<Map<String, Object>> roleUpdateResult = NamedBaseExecute(rolePermissionLinkUpdate_sql, roleParams, where_params, new MapResultHandler());
+
+                semaphore.release(1);
+
+                return roleUpdateResult.size() > 0 ? roleUpdateResult.get(0) : null;
+            }
         } catch (Exception e) {
-            e.printStackTrace();
             throw new RuntimeException(e);
         }
 

@@ -89,13 +89,17 @@ public class RoleController {
                     response.put("errors", List.of(new HashMap<>() {{
                         put("description", "Record already exists");
                     }}));
-                }
-
-                if (e.getCause().getMessage().contains("foreign key")) {
+                } else if (e.getCause().getMessage().contains("foreign key")) {
                     response.put("response_code", "400");
                     response.put("description", "Failed");
                     response.put("errors", List.of(new HashMap<>() {{
-                        put("description", "Role not found");
+                        put("description", "Permission not found");
+                    }}));
+                }else{
+                    response.put("response_code", "500");
+                    response.put("description", "Failed");
+                    response.put("errors", List.of(new HashMap<>() {{
+                        put("description", "Internal error occurred");
                     }}));
                 }
             }else {

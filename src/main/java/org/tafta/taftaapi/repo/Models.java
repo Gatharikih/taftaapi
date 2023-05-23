@@ -19,8 +19,8 @@ public class Models {
         if (collection.size() > 0) {
             StringBuilder keys = new StringBuilder();
             StringBuilder values = new StringBuilder();
-            for (Map.Entry<String, Object> pair : collection.entrySet()) {
 
+            for (Map.Entry<String, Object> pair : collection.entrySet()) {
                 keys.append(pair.getKey()).append(",");
                 values.append(":").append(pair.getKey()).append(",");
             }
@@ -28,7 +28,7 @@ public class Models {
             keys = new StringBuilder(keys.substring(0, keys.length() - 1));
             values = new StringBuilder(values.substring(0, values.length() - 1));
 
-            sql = String.format("insert into %s (%s) values(%s)", table, keys.toString(), values.toString());
+            sql = String.format("insert into %s (%s) values(%s)", table, keys, values);
         }
 
         for (String key : unsetKeys) {
@@ -38,13 +38,14 @@ public class Models {
         return sql;
     }
 
-    public static String UpdateString(String table, Map<String, Object> collection, Map<String, Object> wherecollection) {
+    public static String UpdateString(String table, Map<String, Object> collection, Map<String, Object> whereCollection) {
         StringBuilder sql = new StringBuilder();
         List<String> unsetKeys = new ArrayList<>();
 
         if (collection.size() > 0) {
             String keys;
             String values;
+
             sql = new StringBuilder(String.format("update %s set ", table));
 
             for (Map.Entry<String, Object> pair : collection.entrySet()) {
@@ -60,10 +61,9 @@ public class Models {
             }
 
             sql = new StringBuilder(sql.substring(0, sql.length() - 1));
-
             sql.append(" where ");
 
-            for (Map.Entry<String, Object> pair : wherecollection.entrySet()) {
+            for (Map.Entry<String, Object> pair : whereCollection.entrySet()) {
                 keys = pair.getKey().replaceAll("_1", "") + "=";
                 values = ":" + pair.getKey() + " and ";
 
