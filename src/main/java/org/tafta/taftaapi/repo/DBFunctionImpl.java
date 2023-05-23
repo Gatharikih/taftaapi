@@ -1296,38 +1296,6 @@ public class DBFunctionImpl implements DBFunction {
     // <editor-fold default-state="collapsed" desc="updateRole(Map<String, Object> entryParams)">
     @Override
     public Map<String, Object> updateRole(Map<String, Object> entryParams) {
-        LinkedHashMap<String, Object> params = new LinkedHashMap<>();
-
-        if(entryParams.get("description") != null) {
-            params.put("description", entryParams.get("description").toString());
-        }
-
-        if(entryParams.get("type") != null) {
-            params.put("type", entryParams.get("type").toString());
-        }
-
-        params.put("updated_at", Timestamp.valueOf(LocalDateTime.now()));
-        params.put("updated_by", entryParams.getOrDefault("updated_by", "0").toString());
-
-        params = cleanMap(params);
-
-        LinkedHashMap<String, Object> where_params = new LinkedHashMap<>();
-
-        String sql;
-        String table = "roles";
-
-        if(entryParams.get("id") != null) {
-            where_params.put("id", Integer.parseInt(entryParams.get("id").toString()));
-        }else{
-            return null;
-        }
-
-        sql = Models.UpdateString(table, params, where_params);
-
-        sql += " returning *";
-
-        List<Map<String, Object>> results = NamedBaseExecute(sql, params, where_params, new MapResultHandler());
-
         numOfOperations = 0;
         List<Object> permissionList = (List) entryParams.get("permissions");
         List<Object> allAssignedPermissions = findAllPermissionsAssignedToRole(entryParams.get("role_id").toString());
@@ -1351,44 +1319,72 @@ public class DBFunctionImpl implements DBFunction {
                 }
             }
 
-            log.error("unlikeElements: " + unlikeElements);
-
-            if (results.size() > 0 && unlikeElements != null && unlikeElements.size() > 0) {
+            if (unlikeElements != null && unlikeElements.size() > 0) {
+                // Update Role-Permission tbl
                 while (numOfOperations < unlikeElements.size()) {
                     unlikeElements.forEach(permission -> {
-                        log.error("permission: " + permission);
-
-                        String sql2 = "";
+                        String rolePermissionLink_sql = "";
                         String table2 = "permissions_role_links";
 
-                        LinkedHashMap<String, Object> params2 = new LinkedHashMap<>();
+                        LinkedHashMap<String, Object> rolePermissionLink_params = new LinkedHashMap<>();
 
-                        if (addNewPermission) {
+                        if (addNewPermission && !stripePermission) {
                             String roleIdNum = UUID.randomUUID().toString();
 
-                            params2.put("permission_id", Integer.parseInt(String.valueOf(permission)));
-                            params2.put("role_id", roleIdNum);
+                            rolePermissionLink_params.put("permission_id", Integer.parseInt(String.valueOf(permission)));
+                            rolePermissionLink_params.put("role_id", roleIdNum);
 
-                            sql2 = Models.InsertString(table2, params2);
-                            sql2 += " returning *";
+                            rolePermissionLink_sql = Models.InsertString(table2, rolePermissionLink_params);
+                            rolePermissionLink_sql += " returning *";
                         }
 
-                        if(stripePermission){
-                            sql2 = "SELECT permission_id FROM permissions_role_links WHERE id=:id ORDER BY id";
+                        if(stripePermission && !addNewPermission){
+                            rolePermissionLink_sql = "DELETE FROM permissions_role_links WHERE id=:id";
 
-                            params2.put("id", Integer.parseInt(String.valueOf(permission)));
+                            rolePermissionLink_params.put("id", Integer.parseInt(String.valueOf(permission)));
                         }
 
-//                        List<Map<String, Object>> results2 = NamedBaseExecute(sql2, params2, null, new MapResultHandler());
-//
-//                        if (results2.size() > 0) {
-//                            numOfOperations++;
-//                        }
+                        List<Map<String, Object>> rolePermissionLinkResult = NamedBaseExecute(rolePermissionLink_sql, rolePermissionLink_params, null, new MapResultHandler());
+
+                        if (rolePermissionLinkResult.size() > 0) {
+                            numOfOperations++;
+                        }
                     });
                 }
 
                 if (numOfOperations == permissionList.size()) {
-                    return results.get(0);
+                    // Update Role tbl
+                    String rolePermissionLinkUpdate_sql;
+                    String table = "roles";
+                    LinkedHashMap<String, Object> roleParams = new LinkedHashMap<>();
+
+                    if(entryParams.get("description") != null) {
+                        roleParams.put("description", entryParams.get("description").toString());
+                    }
+
+                    if(entryParams.get("type") != null) {
+                        roleParams.put("type", entryParams.get("type").toString());
+                    }
+
+                    roleParams.put("updated_at", Timestamp.valueOf(LocalDateTime.now()));
+                    roleParams.put("updated_by", entryParams.getOrDefault("updated_by", "0").toString());
+
+                    roleParams = cleanMap(roleParams);
+
+                    LinkedHashMap<String, Object> where_params = new LinkedHashMap<>();
+
+                    if(entryParams.get("id") != null) {
+                        where_params.put("id", Integer.parseInt(entryParams.get("id").toString()));
+                    }else{
+                        return null;
+                    }
+
+                    rolePermissionLinkUpdate_sql = Models.UpdateString(table, roleParams, where_params);
+                    rolePermissionLinkUpdate_sql += " returning *";
+
+                    List<Map<String, Object>> roleUpdateResult = NamedBaseExecute(rolePermissionLinkUpdate_sql, roleParams, where_params, new MapResultHandler());
+
+                    return roleUpdateResult.size() > 0 ? roleUpdateResult.get(0) : null;
                 }
             }
         } catch (Exception e) {
