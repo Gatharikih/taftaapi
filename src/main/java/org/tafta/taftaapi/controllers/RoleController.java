@@ -82,12 +82,22 @@ public class RoleController {
         } catch (Exception e) {
             e.printStackTrace();
 
-            if (e.getCause() != null || e.getCause().getMessage().contains("duplicate key") || e.getCause().getMessage().contains("unique constraint")){
-                response.put("response_code", "400");
-                response.put("description", "Failed");
-                response.put("errors", List.of(new HashMap<>() {{
-                    put("description", "Record already exists");
-                }}));
+            if (e.getCause() != null){
+                if (e.getCause().getMessage().contains("duplicate key") || e.getCause().getMessage().contains("unique constraint")) {
+                    response.put("response_code", "400");
+                    response.put("description", "Failed");
+                    response.put("errors", List.of(new HashMap<>() {{
+                        put("description", "Record already exists");
+                    }}));
+                }
+
+                if (e.getCause().getMessage().contains("foreign key")) {
+                    response.put("response_code", "400");
+                    response.put("description", "Failed");
+                    response.put("errors", List.of(new HashMap<>() {{
+                        put("description", "Role not found");
+                    }}));
+                }
             }else {
                 response.put("response_code", "500");
                 response.put("description", "Failed");

@@ -1329,10 +1329,8 @@ public class DBFunctionImpl implements DBFunction {
                         LinkedHashMap<String, Object> rolePermissionLink_params = new LinkedHashMap<>();
 
                         if (addNewPermission && !stripePermission) {
-                            String roleIdNum = UUID.randomUUID().toString();
-
                             rolePermissionLink_params.put("permission_id", Integer.parseInt(String.valueOf(permission)));
-                            rolePermissionLink_params.put("role_id", roleIdNum);
+                            rolePermissionLink_params.put("role_id", entryParams.get("role_id").toString());
 
                             rolePermissionLink_sql = Models.InsertString(table2, rolePermissionLink_params);
                             rolePermissionLink_sql += " returning *";
@@ -1346,10 +1344,9 @@ public class DBFunctionImpl implements DBFunction {
                         }
 
                         log.error("rolePermissionLink_sql: " + rolePermissionLink_sql);
+                        log.error("rolePermissionLink_params: " + rolePermissionLink_params);
 
                         List<Map<String, Object>> rolePermissionLinkResult = NamedBaseExecute(rolePermissionLink_sql, null, rolePermissionLink_params, new MapResultHandler());
-
-                        log.error("rolePermissionLinkResult: " + rolePermissionLinkResult);
 
                         if (rolePermissionLinkResult.size() > 0) {
                             numOfOperations++;
