@@ -1339,12 +1339,17 @@ public class DBFunctionImpl implements DBFunction {
                         }
 
                         if(stripePermission && !addNewPermission){
-                            rolePermissionLink_sql = "DELETE FROM permissions_role_links WHERE id=:id";
+                            rolePermissionLink_sql = "DELETE FROM permissions_role_links WHERE permission_id=:permission_id AND role_id=:role_id";
 
-                            rolePermissionLink_params.put("id", Integer.parseInt(String.valueOf(permission)));
+                            rolePermissionLink_params.put("permission_id", Integer.parseInt(permission.toString()));
+                            rolePermissionLink_params.put("role_id", entryParams.get("role_id").toString());
                         }
 
-                        List<Map<String, Object>> rolePermissionLinkResult = NamedBaseExecute(rolePermissionLink_sql, rolePermissionLink_params, null, new MapResultHandler());
+                        log.error("rolePermissionLink_sql: " + rolePermissionLink_sql);
+
+                        List<Map<String, Object>> rolePermissionLinkResult = NamedBaseExecute(rolePermissionLink_sql, null, rolePermissionLink_params, new MapResultHandler());
+
+                        log.error("rolePermissionLinkResult: " + rolePermissionLinkResult);
 
                         if (rolePermissionLinkResult.size() > 0) {
                             numOfOperations++;
@@ -1388,6 +1393,7 @@ public class DBFunctionImpl implements DBFunction {
                 }
             }
         } catch (Exception e) {
+            e.printStackTrace();
             throw new RuntimeException(e);
         }
 
