@@ -1322,7 +1322,7 @@ public class DBFunctionImpl implements DBFunction {
                 }
             }
 
-            // TODO: Fix bug resulting from Jodd using executeQuery which sometimes does not return results as expected - can be replaced with executeUpdate in place
+            // TODO: Bug resulting from Jodd using executeQuery which sometimes does not return results as expected - can be replaced with executeUpdate in place
 
             if (unlikeElements != null && unlikeElements.size() > 0) {
                 // Update Role-Permission tbl
@@ -1366,13 +1366,11 @@ public class DBFunctionImpl implements DBFunction {
                 if((numOfOperations + 1) > unlikeElements.size()){
                     return numOfOperations;
                 }
+            }else{
+                return 1;
             }
-
-
         } catch (Exception e) {
-            log.error("\n" + "error1: " + e.getMessage() + "\n");
-
-            throw new RuntimeException(e);
+            return -1;
         }
 
         return numOfOperations;
@@ -1384,8 +1382,8 @@ public class DBFunctionImpl implements DBFunction {
 
         log.error("updatePermissionsStatus: " + updatePermissionsStatus);
 
-        // Update Role tbl
         if (updatePermissionsStatus > 0) {
+            // Update Role tbl
             String rolePermissionLinkUpdate_sql;
             String table = "roles";
             LinkedHashMap<String, Object> roleParams = new LinkedHashMap<>();
