@@ -98,7 +98,6 @@ public class DBFunctionImpl implements DBFunction {
                 rs = query.execute();
 
                 log.error("getStatement: " + rs.getStatement());
-                log.error("rowDeleted: " + rs.rowDeleted());
             }
 
             try {
@@ -114,6 +113,7 @@ public class DBFunctionImpl implements DBFunction {
             query.close();
 
             if (rs != null) {
+                query.closeResultSet(rs);
                 rs.close();
             }
         } catch (SQLException e) {
@@ -1310,7 +1310,6 @@ public class DBFunctionImpl implements DBFunction {
         List<Object> unlikeElements = null;
 
         try {
-            Semaphore semaphore = new Semaphore(1);
             if(!orderedPermissionList.equals(allAssignedPermissionsOrdered)){
                 if(orderedPermissionList.size() > allAssignedPermissionsOrdered.size()){
                     // new permissions to add to role
@@ -1327,10 +1326,7 @@ public class DBFunctionImpl implements DBFunction {
 
             if (unlikeElements != null && unlikeElements.size() > 0) {
                 // Update Role-Permission tbl
-                semaphore.acquire();
-
                 while (numOfOperations < unlikeElements.size()) {
-
                     unlikeElements.forEach(permission -> {
                         String rolePermissionLink_sql = "";
                         String table2 = "permissions_role_links";
@@ -1355,60 +1351,50 @@ public class DBFunctionImpl implements DBFunction {
 
                         List<Map<String, Object>> rolePermissionLinkResult = NamedBaseExecute(rolePermissionLink_sql, null, rolePermissionLink_params, new MapResultHandler());
 
-                        if (rolePermissionLinkResult.size() > 0) {
+                        if (rolePermissionLinkResult != null && rolePermissionLinkResult.size() > 0) {
                             numOfOperations++;
                         }
                     });
                 }
-
-                if((numOfOperations + 1) > unlikeElements.size()){
-                    log.error("semaphore.release(1): 1 ");
-                    semaphore.release(1);
-                }
             }
 
-            if (semaphore.tryAcquire(1)) {
-                log.error("semaphore.acquire(1): 2 ");
-                // Update Role tbl
-                String rolePermissionLinkUpdate_sql;
-                String table = "roles";
-                LinkedHashMap<String, Object> roleParams = new LinkedHashMap<>();
+            // Update Role tbl
+            String rolePermissionLinkUpdate_sql;
+            String table = "roles";
+            LinkedHashMap<String, Object> roleParams = new LinkedHashMap<>();
 
-                if(entryParams.get("description") != null) {
-                    roleParams.put("description", entryParams.get("description").toString());
-                }
-
-                if(entryParams.get("type") != null) {
-                    roleParams.put("type", entryParams.get("type").toString());
-                }
-
-                roleParams.put("updated_at", Timestamp.valueOf(LocalDateTime.now()));
-                roleParams.put("updated_by", entryParams.getOrDefault("updated_by", "0").toString());
-
-                roleParams = cleanMap(roleParams);
-
-                LinkedHashMap<String, Object> where_params = new LinkedHashMap<>();
-
-                if(entryParams.get("id") != null) {
-                    where_params.put("id", Integer.parseInt(entryParams.get("id").toString()));
-                }else{
-                    return null;
-                }
-
-                rolePermissionLinkUpdate_sql = Models.UpdateString(table, roleParams, where_params);
-                rolePermissionLinkUpdate_sql += " returning *";
-
-                List<Map<String, Object>> roleUpdateResult = NamedBaseExecute(rolePermissionLinkUpdate_sql, roleParams, where_params, new MapResultHandler());
-
-                semaphore.release(1);
-
-                return roleUpdateResult.size() > 0 ? roleUpdateResult.get(0) : null;
+            if(entryParams.get("description") != null) {
+                roleParams.put("description", entryParams.get("description").toString());
             }
+
+            if(entryParams.get("type") != null) {
+                roleParams.put("type", entryParams.get("type").toString());
+            }
+
+            roleParams.put("updated_at", Timestamp.valueOf(LocalDateTime.now()));
+            roleParams.put("updated_by", entryParams.getOrDefault("updated_by", "0").toString());
+
+            roleParams = cleanMap(roleParams);
+
+            LinkedHashMap<String, Object> where_params = new LinkedHashMap<>();
+
+            if(entryParams.get("id") != null) {
+                where_params.put("id", Integer.parseInt(entryParams.get("id").toString()));
+            }else{
+                return null;
+            }
+
+            rolePermissionLinkUpdate_sql = Models.UpdateString(table, roleParams, where_params);
+            rolePermissionLinkUpdate_sql += " returning *";
+
+            List<Map<String, Object>> roleUpdateResult = NamedBaseExecute(rolePermissionLinkUpdate_sql, roleParams, where_params, new MapResultHandler());
+
+            return roleUpdateResult.size() > 0 ? roleUpdateResult.get(0) : null;
         } catch (Exception e) {
+            log.error("\n" + "error1: " + e.getMessage() + "\n");
+
             throw new RuntimeException(e);
         }
-
-        return null;
     }
     // </editor-fold>
     //

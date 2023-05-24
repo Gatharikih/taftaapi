@@ -51,7 +51,7 @@ public class RoleService {
                 return new HashMap<>() {{
                     put("response_code", "201");
                     put("description", "Success");
-                    put("data", updateRoleResponse);
+                    put("data", null);
                 }};
             }else{
                 return new HashMap<>() {{
