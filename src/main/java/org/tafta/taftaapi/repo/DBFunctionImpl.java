@@ -113,7 +113,6 @@ public class DBFunctionImpl implements DBFunction {
             query.close();
 
             if (rs != null) {
-                query.closeResultSet(rs);
                 rs.close();
             }
         } catch (SQLException e) {
@@ -1299,8 +1298,7 @@ public class DBFunctionImpl implements DBFunction {
     // </editor-fold>
     //
     // <editor-fold default-state="collapsed" desc="updateRole(Map<String, Object> entryParams)">
-    @Override
-    public Map<String, Object> updateRole(Map<String, Object> entryParams) {
+    public int updatePermissions(Map<String, Object> entryParams) {
         numOfOperations = 0;
         List<Object> permissionList = (List) entryParams.get("permissions");
         List<Object> allAssignedPermissions = findAllPermissionsAssignedToRole(entryParams.get("role_id").toString());
@@ -1324,6 +1322,8 @@ public class DBFunctionImpl implements DBFunction {
                 }
             }
 
+            // TODO: Fix bug resulting from Jodd using executeQuery which sometimes does not return results as expected - can be replaced with executeUpdate in place
+
             if (unlikeElements != null && unlikeElements.size() > 0) {
                 // Update Role-Permission tbl
                 while (numOfOperations < unlikeElements.size()) {
@@ -1333,21 +1333,27 @@ public class DBFunctionImpl implements DBFunction {
 
                         LinkedHashMap<String, Object> rolePermissionLink_params = new LinkedHashMap<>();
 
-                        if (addNewPermission && !stripePermission) {
-                            rolePermissionLink_params.put("permission_id", Integer.parseInt(String.valueOf(permission)));
-                            rolePermissionLink_params.put("role_id", entryParams.get("role_id").toString());
+                        rolePermissionLink_params.put("permission_id", Integer.parseInt(String.valueOf(permission)));
+                        rolePermissionLink_params.put("role_id", entryParams.get("role_id").toString());
 
+                        if (addNewPermission && !stripePermission) {
                             rolePermissionLink_sql = Models.InsertString(table2, rolePermissionLink_params);
                             rolePermissionLink_sql += " returning *";
+//                            rolePermissionLink_sql = "INSERT INTO permissions_role_links(permission_id, role_id) VALUES (" + Integer.parseInt(permission.toString()) +
+//                                    ", '" + entryParams.get("role_id").toString() + "') returning *;";
                         }
 
                         if(stripePermission && !addNewPermission){
-                            rolePermissionLink_sql = "DELETE FROM permissions_role_links WHERE permission_id=:permission_id AND role_id=:role_id";
-                            rolePermissionLink_sql += " returning *";
+                            rolePermissionLink_sql = "DELETE FROM permissions_role_links WHERE permission_id=:permission_id AND role_id=:role_id returning *";
+//                            rolePermissionLink_sql = "DELETE FROM permissions_role_links WHERE permission_id=" + Integer.parseInt(permission.toString()) +
+//                                    " AND role_id='" + entryParams.get("role_id").toString() + "' returning *;";
 
                             rolePermissionLink_params.put("permission_id", Integer.parseInt(permission.toString()));
                             rolePermissionLink_params.put("role_id", entryParams.get("role_id").toString());
                         }
+
+                        log.error(rolePermissionLink_sql);
+                        log.error(String.valueOf(rolePermissionLink_params));
 
                         List<Map<String, Object>> rolePermissionLinkResult = NamedBaseExecute(rolePermissionLink_sql, null, rolePermissionLink_params, new MapResultHandler());
 
@@ -1356,9 +1362,30 @@ public class DBFunctionImpl implements DBFunction {
                         }
                     });
                 }
+
+                if((numOfOperations + 1) > unlikeElements.size()){
+                    return numOfOperations;
+                }
             }
 
-            // Update Role tbl
+
+        } catch (Exception e) {
+            log.error("\n" + "error1: " + e.getMessage() + "\n");
+
+            throw new RuntimeException(e);
+        }
+
+        return numOfOperations;
+    }
+
+    @Override
+    public Map<String, Object> updateRole(Map<String, Object> entryParams){
+        int updatePermissionsStatus = updatePermissions(entryParams);
+
+        log.error("updatePermissionsStatus: " + updatePermissionsStatus);
+
+        // Update Role tbl
+        if (updatePermissionsStatus > 0) {
             String rolePermissionLinkUpdate_sql;
             String table = "roles";
             LinkedHashMap<String, Object> roleParams = new LinkedHashMap<>();
@@ -1390,12 +1417,11 @@ public class DBFunctionImpl implements DBFunction {
             List<Map<String, Object>> roleUpdateResult = NamedBaseExecute(rolePermissionLinkUpdate_sql, roleParams, where_params, new MapResultHandler());
 
             return roleUpdateResult.size() > 0 ? roleUpdateResult.get(0) : null;
-        } catch (Exception e) {
-            log.error("\n" + "error1: " + e.getMessage() + "\n");
-
-            throw new RuntimeException(e);
+        } else {
+            return null;
         }
     }
+
     // </editor-fold>
     //
     // <editor-fold default-state="collapsed" desc="listAllRoles(Map<String, Object> queryParams) ">
