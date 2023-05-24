@@ -96,8 +96,6 @@ public class DBFunctionImpl implements DBFunction {
                 query.executeUpdate();
             } else {
                 rs = query.execute();
-
-                log.error("getStatement: " + rs.getStatement());
             }
 
             try {
@@ -1333,10 +1331,10 @@ public class DBFunctionImpl implements DBFunction {
 
                         LinkedHashMap<String, Object> rolePermissionLink_params = new LinkedHashMap<>();
 
-                        rolePermissionLink_params.put("permission_id", Integer.parseInt(String.valueOf(permission)));
-                        rolePermissionLink_params.put("role_id", entryParams.get("role_id").toString());
-
                         if (addNewPermission && !stripePermission) {
+                            rolePermissionLink_params.put("permission_id", Integer.parseInt(String.valueOf(permission)));
+                            rolePermissionLink_params.put("role_id", entryParams.get("role_id").toString());
+
                             rolePermissionLink_sql = Models.InsertString(table2, rolePermissionLink_params);
                             rolePermissionLink_sql += " returning *";
 //                            rolePermissionLink_sql = "INSERT INTO permissions_role_links(permission_id, role_id) VALUES (" + Integer.parseInt(permission.toString()) +
@@ -1344,16 +1342,13 @@ public class DBFunctionImpl implements DBFunction {
                         }
 
                         if(stripePermission && !addNewPermission){
+                            rolePermissionLink_params.put("permission_id", Integer.parseInt(permission.toString()));
+                            rolePermissionLink_params.put("role_id", entryParams.get("role_id").toString());
+
                             rolePermissionLink_sql = "DELETE FROM permissions_role_links WHERE permission_id=:permission_id AND role_id=:role_id returning *";
 //                            rolePermissionLink_sql = "DELETE FROM permissions_role_links WHERE permission_id=" + Integer.parseInt(permission.toString()) +
 //                                    " AND role_id='" + entryParams.get("role_id").toString() + "' returning *;";
-
-                            rolePermissionLink_params.put("permission_id", Integer.parseInt(permission.toString()));
-                            rolePermissionLink_params.put("role_id", entryParams.get("role_id").toString());
                         }
-
-                        log.error(rolePermissionLink_sql);
-                        log.error(String.valueOf(rolePermissionLink_params));
 
                         List<Map<String, Object>> rolePermissionLinkResult = NamedBaseExecute(rolePermissionLink_sql, null, rolePermissionLink_params, new MapResultHandler());
 
@@ -1370,6 +1365,8 @@ public class DBFunctionImpl implements DBFunction {
                 return 1;
             }
         } catch (Exception e) {
+            e.printStackTrace();
+
             return -1;
         }
 
