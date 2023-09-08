@@ -1,7 +1,6 @@
 package org.tafta.taftaapi.repo;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jodd.db.DbOom;
 import jodd.db.DbQuery;
@@ -22,12 +21,9 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.concurrent.Semaphore;
-import java.util.stream.Collectors;
 
 /**
  * @author Gathariki Ngigi
@@ -39,21 +35,14 @@ import java.util.stream.Collectors;
 @Component
 public class DBFunctionImpl implements DBFunction {
     @Autowired
-    private DbConnectionsHandler connectionsHandler;
-
-    private static final SimpleDateFormat DATE_FORMAT_COMPRESSED = new SimpleDateFormat("yyMMdd");
+    DbConnectionsHandler connectionsHandler;
     static Mac mac = null;
-    private final ObjectMapper objectMapper = new ObjectMapper();
     private static DbOom dbOom = null;
     int trackQuery;
     int numOfOperations;
-
     boolean addNewPermission = false, stripePermission = false;
-
-    public enum LogType {ERRORS, APIREQUESTS, RESPONSES, MONEYTRANS, COOPCALLBACK}
-
-    private static final DateTimeFormatter defaultTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd HH:mm:ss", Locale.ENGLISH);
-    private final Map<String, Object> exceptions = new HashMap<>();
+    final Map<String, Object> exceptions = new HashMap<>();
+    ObjectMapper mapper = new ObjectMapper();
 
     public DBFunctionImpl() {
         mac = HmacUtils.getInitializedMac(HmacAlgorithms.HMAC_SHA_512, "3pA4KkUTeGydlxLwht1kIOweCEGOztJAjNKvXa5QPlXlCLnd5hj8KC19fUg3".getBytes(StandardCharsets.UTF_8));
@@ -103,7 +92,7 @@ public class DBFunctionImpl implements DBFunction {
                     output = handler.handle(rs);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error(e.getMessage());
 
                 exceptions.put("errors", e.getCause().getMessage());
             }
@@ -114,7 +103,7 @@ public class DBFunctionImpl implements DBFunction {
                 rs.close();
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
 
             exceptions.put("errors", e.getCause().getMessage());
         } finally {
@@ -122,7 +111,7 @@ public class DBFunctionImpl implements DBFunction {
                 try {
                     connection.close();
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    log.error(e.getMessage());
 
                     exceptions.put("errors", e.getCause().getMessage());
 
@@ -171,7 +160,7 @@ public class DBFunctionImpl implements DBFunction {
             params.put("company_id", entryParams.get("company_id").toString());
         }
         params.put("role_id", Optional.ofNullable(entryParams.get("role_id"))
-                .orElse(getUserRoleId("user").size() > 0 ? Integer.parseInt(getUserRoleId("user").get(0).get("id").toString()) : 5));
+                .orElse(!getUserRoleId("user").isEmpty() ? Integer.parseInt(getUserRoleId("user").get(0).get("id").toString()) : 5));
 
         if(entryParams.get("fullname") != null){
             params.put("fullname", entryParams.get("fullname").toString());
@@ -211,7 +200,7 @@ public class DBFunctionImpl implements DBFunction {
 
         List<Map<String, Object>> results = NamedBaseExecute(sql, params, null, new MapResultHandler());
 
-        if(results.size() > 0){
+        if(!results.isEmpty()){
             return results;
         }
 
@@ -228,7 +217,7 @@ public class DBFunctionImpl implements DBFunction {
             params.put("company_id", entryParams.get("company_id").toString());
         }
         params.put("role_id", Optional.ofNullable(entryParams.get("role_id"))
-                .orElse(getUserRoleId("user").size() > 0 ? Integer.parseInt(getUserRoleId("user").get(0).get("id").toString()) : 5));
+                .orElse(!getUserRoleId("user").isEmpty() ? Integer.parseInt(getUserRoleId("user").get(0).get("id").toString()) : 5));
 
         if(entryParams.get("fullname") != null){
             params.put("fullname", entryParams.get("fullname").toString());
@@ -254,7 +243,7 @@ public class DBFunctionImpl implements DBFunction {
             try {
                 params.put("status", UserStatus.getUserStatusType(entryParams.get("status").toString()));
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error(e.getMessage());
 
 //                throw new RuntimeException("Unrecognized status");
                 return new ArrayList<>();
@@ -279,7 +268,7 @@ public class DBFunctionImpl implements DBFunction {
 
         List<Map<String, Object>> results = NamedBaseExecute(sql, params, where_params, new MapResultHandler());
 
-        if(results.size() > 0){
+        if(!results.isEmpty()){
             return results;
         }
 
@@ -312,7 +301,7 @@ public class DBFunctionImpl implements DBFunction {
 
         List<Map<String, Object>> user = NamedBaseExecute(sql, param, null, new MapResultHandler());
 
-        return user.size() > 0 ? user : null;
+        return !user.isEmpty() ? user : null;
     }
     // </editor-fold>
     //
@@ -335,7 +324,7 @@ public class DBFunctionImpl implements DBFunction {
 
         List<Map<String, Object>> user = NamedBaseExecute(sql, params, where_param, new MapResultHandler());
 
-        return user.size() > 0 ? user : null;
+        return !user.isEmpty() ? user : null;
     }
     // </editor-fold>
     //
@@ -349,7 +338,7 @@ public class DBFunctionImpl implements DBFunction {
 
         List<Map<String, Object>> users = NamedBaseExecute(sql, param, null, new MapResultHandler());
 
-        return users.size() > 0 ? users.get(0) : null;
+        return !users.isEmpty() ? users.get(0) : null;
     }
     // </editor-fold>
     //
@@ -375,7 +364,7 @@ public class DBFunctionImpl implements DBFunction {
 
         List<Map<String, Object>> results = NamedBaseExecute(sql, params, where_params, new MapResultHandler());
 
-        if(results.size() > 0){
+        if(!results.isEmpty()){
             return results.get(0);
         }
 
@@ -396,7 +385,7 @@ public class DBFunctionImpl implements DBFunction {
 
         List<Map<String, Object>> properties = NamedBaseExecute(sql, param, null, new MapResultHandler());
 
-        return properties.size() > 0 ? properties.get(0) : null;
+        return !properties.isEmpty() ? properties.get(0) : null;
     }
     // </editor-fold>
     //
@@ -475,7 +464,7 @@ public class DBFunctionImpl implements DBFunction {
 
         List<Map<String, Object>> properties = NamedBaseExecute(sql, param, null, new MapResultHandler());
 
-        return properties.size() > 0 ? properties : null;
+        return !properties.isEmpty() ? properties : null;
     }
     // </editor-fold>
     //
@@ -501,7 +490,7 @@ public class DBFunctionImpl implements DBFunction {
 
         List<Map<String, Object>> results = NamedBaseExecute(sql, params, where_params, new MapResultHandler());
 
-        if(results.size() > 0){
+        if(!results.isEmpty()){
             return results.get(0);
         }
 
@@ -536,7 +525,8 @@ public class DBFunctionImpl implements DBFunction {
 
         if(entryParams.get("status") != null){
             try {
-                params.put("status", Optional.of(UserStatus.getUserStatusType(entryParams.get("status").toString())).orElse(UserStatus.getUserStatusType("active")));
+                params.put("status", Optional.of(UserStatus.getUserStatusType(entryParams.get("status").toString()))
+                        .orElse(UserStatus.getUserStatusType("active")));
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -556,7 +546,7 @@ public class DBFunctionImpl implements DBFunction {
 
         List<Map<String, Object>> results = NamedBaseExecute(sql, params, null, new MapResultHandler());
 
-        if(results.size() > 0){
+        if(!results.isEmpty()){
             return results;
         }
 
@@ -621,7 +611,7 @@ public class DBFunctionImpl implements DBFunction {
                     params.put("deleted_at", Timestamp.valueOf(LocalDateTime.now()));
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error(e.getMessage());
 
                 throw new RuntimeException(e);
             }
@@ -652,7 +642,7 @@ public class DBFunctionImpl implements DBFunction {
 
         List<Map<String, Object>> results = NamedBaseExecute(sql, params, where_params, new MapResultHandler());
 
-        if(results.size() > 0){
+        if(!results.isEmpty()){
             return results;
         }
 
@@ -680,7 +670,7 @@ public class DBFunctionImpl implements DBFunction {
 
         List<Map<String, Object>> property = NamedBaseExecute(sql, null, where_param, new MapResultHandler());
 
-        return property.size() > 0 ? property : null;
+        return !property.isEmpty() ? property : null;
     }
     // </editor-fold>
     //
@@ -697,7 +687,7 @@ public class DBFunctionImpl implements DBFunction {
 
         List<Map<String, Object>> properties = NamedBaseExecute(sql, param, null, new MapResultHandler());
 
-        return properties.size() > 0 ? properties.get(0) : null;
+        return !properties.isEmpty() ? properties.get(0) : null;
     }
     // </editor-fold>
     //
@@ -776,7 +766,7 @@ public class DBFunctionImpl implements DBFunction {
 
         List<Map<String, Object>> properties = NamedBaseExecute(sql, param, null, new MapResultHandler());
 
-        return properties.size() > 0 ? properties : null;
+        return !properties.isEmpty() ? properties : null;
     }
     // </editor-fold>
     //
@@ -802,7 +792,7 @@ public class DBFunctionImpl implements DBFunction {
 
         List<Map<String, Object>> results = NamedBaseExecute(sql, params, where_params, new MapResultHandler());
 
-        if(results.size() > 0){
+        if(!results.isEmpty()){
             return results.get(0);
         }
 
@@ -843,6 +833,7 @@ public class DBFunctionImpl implements DBFunction {
             try {
                 params.put("status", Optional.of(CompanyStatus.getCompanyStatusType(entryParams.get("status").toString())).orElse(UserStatus.getUserStatusType("active")));
             } catch (Exception e) {
+                log.error(e.getMessage());
                 throw new RuntimeException(e);
             }
         }
@@ -857,7 +848,7 @@ public class DBFunctionImpl implements DBFunction {
 
         List<Map<String, Object>> results = NamedBaseExecute(sql, params, null, new MapResultHandler());
 
-        if(results.size() > 0){
+        if(!results.isEmpty()){
             return results;
         }
 
@@ -914,7 +905,7 @@ public class DBFunctionImpl implements DBFunction {
             try {
                 params.put("status", CompanyStatus.getCompanyStatusType(entryParams.get("status").toString()));
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error(e.getMessage());
 
                 throw new RuntimeException(e);
             }
@@ -945,7 +936,7 @@ public class DBFunctionImpl implements DBFunction {
 
         List<Map<String, Object>> results = NamedBaseExecute(sql, params, where_params, new MapResultHandler());
 
-        if(results.size() > 0){
+        if(!results.isEmpty()){
             return results;
         }
 
@@ -973,7 +964,7 @@ public class DBFunctionImpl implements DBFunction {
 
         List<Map<String, Object>> property = NamedBaseExecute(sql, null, where_param, new MapResultHandler());
 
-        return property.size() > 0 ? property : null;
+        return !property.isEmpty() ? property : null;
     }
     // </editor-fold>
     //
@@ -990,7 +981,7 @@ public class DBFunctionImpl implements DBFunction {
 
         List<Map<String, Object>> properties = NamedBaseExecute(sql, param, null, new MapResultHandler());
 
-        return properties.size() > 0 ? properties.get(0) : null;
+        return !properties.isEmpty() ? properties.get(0) : null;
     }
     // </editor-fold>
     //
@@ -1009,7 +1000,7 @@ public class DBFunctionImpl implements DBFunction {
                 params.put("status", Role_PermissionStatus.getRole_PermissionStatusType("delete"));
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
 
             throw new RuntimeException(e);
         }
@@ -1028,7 +1019,7 @@ public class DBFunctionImpl implements DBFunction {
 
         List<Map<String, Object>> results = NamedBaseExecute(sql, params, where_params, new MapResultHandler());
 
-        if(results.size() > 0){
+        if(!results.isEmpty()){
             return results.get(0);
         }
 
@@ -1062,7 +1053,7 @@ public class DBFunctionImpl implements DBFunction {
 
         List<Map<String, Object>> results = NamedBaseExecute(sql, params, null, new MapResultHandler());
 
-        if(results.size() > 0){
+        if(!results.isEmpty()){
             return results;
         }
 
@@ -1099,9 +1090,10 @@ public class DBFunctionImpl implements DBFunction {
 
         sql += " returning *";
 
-        List<Map<String, Object>> results = NamedBaseExecute(sql, params, where_params, new MapResultHandler());
+        List<Map<String, Object>> results = NamedBaseExecute(sql, params, where_params,
+                new MapResultHandler());
 
-        if(results.size() > 0){
+        if(!results.isEmpty()){
             return results;
         }
 
@@ -1119,7 +1111,8 @@ public class DBFunctionImpl implements DBFunction {
 
         try {
 //            param.put("limit", limit);
-            param.put("status", Role_PermissionStatus.getRole_PermissionStatusType(queryParams.getOrDefault("status", Role_PermissionStatus.ACTIVE.name()).toString()));
+            param.put("status", Role_PermissionStatus.getRole_PermissionStatusType(queryParams.getOrDefault("status",
+                    Role_PermissionStatus.ACTIVE.name()).toString()));
 
             if(queryParams.get("page_number") == null){
                 param.put("offset", 0);
@@ -1131,8 +1124,9 @@ public class DBFunctionImpl implements DBFunction {
 
             List<Map<String, Object>> property = NamedBaseExecute(sql, null, param, new MapResultHandler());
 
-            return property.size() > 0 ? property : null;
+            return !property.isEmpty() ? property : null;
         } catch (Exception e) {
+            log.error(e.getMessage());
             throw new RuntimeException(e);
         }
     }
@@ -1149,9 +1143,10 @@ public class DBFunctionImpl implements DBFunction {
 
         param.put("id", Integer.parseInt(id));
 
-        List<Map<String, Object>> properties = NamedBaseExecute(sql, param, null, new MapResultHandler());
+        List<Map<String, Object>> properties = NamedBaseExecute(sql, param, null,
+                new MapResultHandler());
 
-        return properties.size() > 0 ? properties.get(0) : null;
+        return !properties.isEmpty() ? properties.get(0) : null;
     }
     // </editor-fold>
     //
@@ -1170,7 +1165,7 @@ public class DBFunctionImpl implements DBFunction {
                 params.put("status", Role_PermissionStatus.getRole_PermissionStatusType("delete"));
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
 
             throw new RuntimeException(e);
         }
@@ -1189,7 +1184,7 @@ public class DBFunctionImpl implements DBFunction {
 
         List<Map<String, Object>> results = NamedBaseExecute(sql, params, where_params, new MapResultHandler());
 
-        if(results.size() > 0){
+        if(!results.isEmpty()){
             return results.get(0);
         }
 
@@ -1232,7 +1227,7 @@ public class DBFunctionImpl implements DBFunction {
         params.put("created_by", entryParams.getOrDefault("created_by", "0").toString());
         params.put("updated_by", entryParams.getOrDefault("updated_by", "0").toString());
 
-        List<Object> permissionList = (List) entryParams.get("permissions");
+        List<Object> permissionList = mapper.convertValue(entryParams.get("permissions"), new TypeReference<>() {});
 
         try {
             numOfOperations = 0;
@@ -1245,9 +1240,10 @@ public class DBFunctionImpl implements DBFunction {
             sql = Models.InsertString(table, params);
             sql += " returning *";
 
-            List<Map<String, Object>> results = NamedBaseExecute(sql, params, null, new MapResultHandler());
+            List<Map<String, Object>> results = NamedBaseExecute(sql, params, null,
+                    new MapResultHandler());
 
-            if(results.size() > 0 && permissionList.size() > 0){
+            if(!results.isEmpty() && !permissionList.isEmpty()){
                 while(numOfOperations < permissionList.size()) {
                     permissionList.forEach(permission -> {
                         String sql2;
@@ -1261,9 +1257,10 @@ public class DBFunctionImpl implements DBFunction {
                         sql2 = Models.InsertString(table2, params2);
                         sql2 += " returning *";
 
-                        List<Map<String, Object>> results2 = NamedBaseExecute(sql2, params2, null, new MapResultHandler());
+                        List<Map<String, Object>> results2 = NamedBaseExecute(sql2, params2, null,
+                                new MapResultHandler());
 
-                        if (results2.size() > 0) {
+                        if (!results2.isEmpty()) {
                             numOfOperations++;
                         }
                     });
@@ -1274,6 +1271,7 @@ public class DBFunctionImpl implements DBFunction {
                 }
             }
         } catch (Exception e) {
+            log.error(e.getMessage());
             throw new RuntimeException(e);
         }
 
@@ -1291,14 +1289,14 @@ public class DBFunctionImpl implements DBFunction {
         List<Map<String, Object>> permissions = NamedBaseExecute(sql, param, null, new MapResultHandler());
         List<String> permissionsArr = permissions.stream().map(s -> s.get("permission_id").toString()).toList();
 
-        return permissions.size() > 0 ? (List) permissionsArr : null;
+        return !permissions.isEmpty() ? mapper.convertValue(permissionsArr, new TypeReference<>() {}) : null;
     }
     // </editor-fold>
     //
     // <editor-fold default-state="collapsed" desc="updateRole(Map<String, Object> entryParams)">
     public int updatePermissions(Map<String, Object> entryParams) {
         numOfOperations = 0;
-        List<Object> permissionList = (List) entryParams.get("permissions");
+        List<Object> permissionList = mapper.convertValue(entryParams.get("permissions"), new TypeReference<>() {});
         List<Object> allAssignedPermissions = findAllPermissionsAssignedToRole(entryParams.get("role_id").toString());
 
         List<Object> orderedPermissionList =  permissionList.stream().sorted().toList();
@@ -1322,7 +1320,7 @@ public class DBFunctionImpl implements DBFunction {
 
             // TODO: Bug resulting from Jodd using executeQuery which sometimes does not return results as expected - can be replaced with executeUpdate in place
 
-            if (unlikeElements != null && unlikeElements.size() > 0) {
+            if (unlikeElements != null && !unlikeElements.isEmpty()) {
                 // Update Role-Permission tbl
                 while (numOfOperations < unlikeElements.size()) {
                     unlikeElements.forEach(permission -> {
@@ -1337,8 +1335,6 @@ public class DBFunctionImpl implements DBFunction {
 
                             rolePermissionLink_sql = Models.InsertString(table2, rolePermissionLink_params);
                             rolePermissionLink_sql += " returning *";
-//                            rolePermissionLink_sql = "INSERT INTO permissions_role_links(permission_id, role_id) VALUES (" + Integer.parseInt(permission.toString()) +
-//                                    ", '" + entryParams.get("role_id").toString() + "') returning *;";
                         }
 
                         if(stripePermission && !addNewPermission){
@@ -1346,13 +1342,12 @@ public class DBFunctionImpl implements DBFunction {
                             rolePermissionLink_params.put("role_id", entryParams.get("role_id").toString());
 
                             rolePermissionLink_sql = "DELETE FROM permissions_role_links WHERE permission_id=:permission_id AND role_id=:role_id returning *";
-//                            rolePermissionLink_sql = "DELETE FROM permissions_role_links WHERE permission_id=" + Integer.parseInt(permission.toString()) +
-//                                    " AND role_id='" + entryParams.get("role_id").toString() + "' returning *;";
                         }
 
-                        List<Map<String, Object>> rolePermissionLinkResult = NamedBaseExecute(rolePermissionLink_sql, null, rolePermissionLink_params, new MapResultHandler());
+                        List<Map<String, Object>> rolePermissionLinkResult = NamedBaseExecute(rolePermissionLink_sql,
+                                null, rolePermissionLink_params, new MapResultHandler());
 
-                        if (rolePermissionLinkResult != null && rolePermissionLinkResult.size() > 0) {
+                        if (rolePermissionLinkResult != null && !rolePermissionLinkResult.isEmpty()) {
                             numOfOperations++;
                         }
                     });
@@ -1365,7 +1360,7 @@ public class DBFunctionImpl implements DBFunction {
                 return 1;
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
 
             return -1;
         }
@@ -1409,9 +1404,10 @@ public class DBFunctionImpl implements DBFunction {
             rolePermissionLinkUpdate_sql = Models.UpdateString(table, roleParams, where_params);
             rolePermissionLinkUpdate_sql += " returning *";
 
-            List<Map<String, Object>> roleUpdateResult = NamedBaseExecute(rolePermissionLinkUpdate_sql, roleParams, where_params, new MapResultHandler());
+            List<Map<String, Object>> roleUpdateResult = NamedBaseExecute(rolePermissionLinkUpdate_sql,
+                    roleParams, where_params, new MapResultHandler());
 
-            return roleUpdateResult.size() > 0 ? roleUpdateResult.get(0) : null;
+            return !roleUpdateResult.isEmpty() ? roleUpdateResult.get(0) : null;
         } else {
             return null;
         }
@@ -1430,7 +1426,8 @@ public class DBFunctionImpl implements DBFunction {
 
         try {
 //            param.put("limit", limit);
-            param.put("status", Role_PermissionStatus.getRole_PermissionStatusType(queryParams.getOrDefault("status", Role_PermissionStatus.ACTIVE.name()).toString()));
+            param.put("status", Role_PermissionStatus.getRole_PermissionStatusType(queryParams.getOrDefault("status",
+                    Role_PermissionStatus.ACTIVE.name()).toString()));
 
             if(queryParams.get("page_number") == null){
                 param.put("offset", 0);
@@ -1442,8 +1439,9 @@ public class DBFunctionImpl implements DBFunction {
 
             List<Map<String, Object>> property = NamedBaseExecute(sql, null, param, new MapResultHandler());
 
-            return property.size() > 0 ? property : null;
+            return !property.isEmpty() ? property : null;
         } catch (Exception e) {
+            log.error(e.getMessage());
             throw new RuntimeException(e);
         }
     }
