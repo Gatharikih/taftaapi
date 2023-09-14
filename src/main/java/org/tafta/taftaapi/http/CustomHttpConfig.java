@@ -20,7 +20,6 @@ import java.time.Duration;
 
 @Configuration
 public class CustomHttpConfig {
-
     /**
      * Blocking Http RestTemplate configuration
      */
@@ -39,7 +38,6 @@ public class CustomHttpConfig {
      */
     @Bean
     WebClient injectWebClient() {
-
         HttpClient client = HttpClient.create()
                 .responseTimeout(Duration.ofSeconds(60));
 

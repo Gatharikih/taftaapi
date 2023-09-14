@@ -23,6 +23,7 @@ import org.springframework.context.annotation.Configuration;
 public class PropConfiguration {
     @Value("${app.config.is_app_live}")
     private boolean isApplicationLive;
+
     @Value("${app.db.host}")
     private String dbHost ;
     @Value("${app.db.database}")
@@ -33,6 +34,7 @@ public class PropConfiguration {
     private String dbPassword ;
     @Value("${app.db.port}")
     private String dbPort ;
+
     @Value("${app.services.switch}")
     private boolean switchService;
     @Value("${app.services.query}")

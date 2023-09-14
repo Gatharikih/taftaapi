@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import me.xdrop.fuzzywuzzy.FuzzySearch;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -58,24 +57,6 @@ public class Utility {
 
             return generateRandomFromUUID();
         }
-    }
-
-    public static boolean thresholdMatch(String stringToMatch1, String stringToMatch2, String threshold) {
-        try {
-            // Threshold check
-            int similarityMeasure = FuzzySearch.tokenSetRatio(stringToMatch1.trim(), stringToMatch2.trim());
-
-            log.info("stringToMatch1: " + stringToMatch1 + " : " + "stringToMatch2: " + stringToMatch2 +
-                    " = similarityMeasure: " + similarityMeasure);
-
-            if (similarityMeasure >= Integer.parseInt(threshold)) {
-                return true;
-            }
-        } catch (Exception e) {
-            log.error(e.getMessage());
-        }
-
-        return false;
     }
 
     public static String appInstanceActivityID() {
