@@ -4,7 +4,9 @@ server:
   port: ${API_ENV_PORT:8200}
   error:
     path: /error
-
+management:
+  security:
+    enabled: false
 app:
   services:
     switch: ${API_ENV_SERVICES_SWITCH:false}

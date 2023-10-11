@@ -1,12 +1,14 @@
 package org.tafta.taftaapi.controllers;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.tafta.taftaapi.services.DataValidation;
 import org.tafta.taftaapi.services.PropertyService;
-import org.tafta.taftaapi.services.UserService;
+import org.tafta.taftaapi.utility.Utility;
 
 import java.util.*;
 
@@ -22,7 +24,8 @@ public class PropertyController {
     @Autowired
     PropertyService propertyService;
     @Autowired
-    private DataValidation dataValidation;
+    DataValidation dataValidation;
+    ObjectMapper mapper = new ObjectMapper();
 
     @RequestMapping(value ="/api/v1/properties/property/{property_id}", method = RequestMethod.GET)
     public ResponseEntity<Object> getProperty(@PathVariable("property_id") String propertyId) {
@@ -39,7 +42,7 @@ public class PropertyController {
                 }});
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
 
             return ResponseEntity.status(500).body(new HashMap<>() {{
                 put("response_code", "500");
@@ -50,25 +53,33 @@ public class PropertyController {
     }
 
     @RequestMapping(value ="/api/v1/properties", method = RequestMethod.GET)
-    public ResponseEntity<Object> searchProperties(@RequestParam("county") Optional<String> county, @RequestParam("property_name") Optional<String> propertyName, @RequestParam("min_price") Optional<String> minPrice
-            , @RequestParam("max_price") Optional<String> maxPrice, @RequestParam("price") Optional<String> price, @RequestParam("description") Optional<String> description,
-                                                   @RequestParam("location") Optional<String> location) {
+    public ResponseEntity<Object> searchProperties(@RequestParam(value = "county", required = false) String county,
+                                                   @RequestParam(value = "property_name", required = false) String propertyName,
+                                                   @RequestParam(value = "min_price", required = false) String minPrice,
+                                                   @RequestParam(value = "max_price", required = false) String maxPrice,
+                                                   @RequestParam(value = "price", required = false) String price,
+                                                   @RequestParam(value = "description", required = false) String description,
+                                                   @RequestParam(value = "location", required = false) String location) {
         try {
             Map<String, Object> searchMap = new HashMap<>();
 
-            county.ifPresent(s -> searchMap.put("county", s));
-            propertyName.ifPresent(s -> searchMap.put("property_name", s));
-            minPrice.ifPresent(s -> searchMap.put("min_price", s));
-            maxPrice.ifPresent(s -> searchMap.put("max_price", s));
-            price.ifPresent(s -> searchMap.put("price", s));
-            description.ifPresent(s -> searchMap.put("description", s));
-            location.ifPresent(s -> searchMap.put("location", s));
+            searchMap.put("county", county);
+            searchMap.put("property_name", propertyName);
+            searchMap.put("min_price", minPrice);
+            searchMap.put("max_price", maxPrice);
+            searchMap.put("price", price);
+            searchMap.put("description", description);
+            searchMap.put("location", location);
+
+            searchMap = Utility.cleanMap(searchMap);
 
             Map<String, Object> searchPropertiesResponse = propertyService.searchProperties(searchMap);
 
-            return ResponseEntity.status(Integer.parseInt(searchPropertiesResponse.get("response_code").toString())).body(searchPropertiesResponse);
+            return ResponseEntity
+                    .status(Integer.parseInt(searchPropertiesResponse.get("response_code").toString()))
+                    .body(searchPropertiesResponse);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
 
             return ResponseEntity.status(500).body(new HashMap<>() {{
                 put("response_code", "500");
@@ -79,18 +90,23 @@ public class PropertyController {
     }
 
     @RequestMapping(value ="/api/v1/properties/list", method = RequestMethod.GET)
-    public ResponseEntity<Object> listAllProperties(@RequestParam("page_number") Optional<String> pageNumber, @RequestParam("status") Optional<String> status) {
+    public ResponseEntity<Object> listAllProperties(@RequestParam(value = "page_number", required = false) String pageNumber,
+                                                    @RequestParam(value = "status", required = false) String status) {
         try {
             Map<String, Object> searchMap = new HashMap<>();
 
-            pageNumber.ifPresent(s -> searchMap.put("page_number", s));
-            status.ifPresent(s -> searchMap.put("status", s));
+            searchMap.put("page_number", pageNumber);
+            searchMap.put("status", status);
+
+            searchMap = Utility.cleanMap(searchMap);
 
             Map<String, Object> listAllPropertiesResponse = propertyService.listAllProperties(searchMap);
 
-            return ResponseEntity.status(Integer.parseInt(listAllPropertiesResponse.get("response_code").toString())).body(listAllPropertiesResponse);
+            return ResponseEntity
+                    .status(Integer.parseInt(listAllPropertiesResponse.get("response_code").toString()))
+                    .body(listAllPropertiesResponse);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
 
             return ResponseEntity.status(500).body(new HashMap<>() {{
                 put("response_code", "500");
@@ -101,7 +117,8 @@ public class PropertyController {
     }
 
     @RequestMapping(value ="/api/v1/properties/{property_id}", method = RequestMethod.PUT)
-    public ResponseEntity<Object> updateProperty(@PathVariable("property_id") String propertyId, @RequestBody Map<String, Object> body) {
+    public ResponseEntity<Object> updateProperty(@PathVariable("property_id") String propertyId,
+                                                 @RequestBody Map<String, Object> body) {
         Map<String, Object> response = new HashMap<>();
 
         try {
@@ -110,7 +127,7 @@ public class PropertyController {
             return ResponseEntity.status(Integer.parseInt(updatePropertyResponse.get("response_code").toString()))
                     .body(updatePropertyResponse);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
 
             if (e.getCause() != null || e.getCause().getMessage().contains("duplicate key") || e.getCause().getMessage().contains("unique constraint")){
                 response.put("response_code", "400");
@@ -139,9 +156,11 @@ public class PropertyController {
             List<String> requiredFields = new ArrayList<>();
 
             requiredFields.add("county");
+            requiredFields.add("created_by");
+            requiredFields.add("created_by");
             requiredFields.add("latitude");
-            requiredFields.add("longitude");
             requiredFields.add("location");
+            requiredFields.add("longitude");
             requiredFields.add("property_description");
             requiredFields.add("property_name");
             requiredFields.add("property_price");
@@ -154,7 +173,7 @@ public class PropertyController {
                 return ResponseEntity.status(Integer.parseInt(createUserResponse.get("response_code").toString()))
                         .body(createUserResponse);
             } else {
-                Map validationErrorMap = (Map) dataValidationResult.get("errors");
+                Map<String, Object> validationErrorMap = mapper.convertValue(dataValidationResult.get("errors"), new TypeReference<>() {});
 
                 response.put("response_code", "400");
                 response.put("description", "Failed");
@@ -163,7 +182,7 @@ public class PropertyController {
                 return ResponseEntity.status(400).body(response);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
 
             if (e.getCause() != null || e.getCause().getMessage().contains("duplicate key") || e.getCause().getMessage().contains("unique constraint")){
                 response.put("response_code", "400");
@@ -199,7 +218,7 @@ public class PropertyController {
                 }});
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
 
             return ResponseEntity.status(500).body(new HashMap<>() {{
                 put("response_code", "500");

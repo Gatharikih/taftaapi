@@ -17,6 +17,7 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -136,5 +137,21 @@ public class Utility {
             sessionCreationPolicy = SessionCreationPolicy.IF_REQUIRED; // Allow Session creation
         }
         return sessionCreationPolicy;
+    }
+
+    public static Map<String, Object> cleanMap(Map<String, Object> map) {
+        if (map != null) {
+            Map<String, Object> retMap = new HashMap<>();
+
+            for (Map.Entry<String, Object> param : map.entrySet()) {
+                if (param.getValue() != null) {
+                    retMap.put(param.getKey(), param.getValue());
+                }
+            }
+
+            return retMap;
+        }
+
+        return null;
     }
 }
