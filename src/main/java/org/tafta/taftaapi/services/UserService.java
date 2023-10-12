@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.tafta.taftaapi.repo.DBFunctionImpl;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,26 +18,27 @@ import java.util.Map;
 @Service
 public class UserService {
     @Autowired
-    private DBFunctionImpl dbFunction;
+    DBFunctionImpl dbFunction;
 
     public Map<String, Object> createUser(Map<String, Object> userParams){
+        Map<String, Object> response = new HashMap<>();
         List<Map<String, Object>> createUserResponse = dbFunction.createUser(userParams);
 
-        if(createUserResponse != null && createUserResponse.size() > 0){
-            return new HashMap<>() {{
-                put("response_code", "201");
-                put("description", "Success");
-                put("data", createUserResponse);
-            }};
+        if(createUserResponse != null && !createUserResponse.isEmpty()){
+            response.put("response_code", "201");
+            response.put("description", "Success");
+            response.put("data", createUserResponse);
         }else{
-            return new HashMap<>() {{
-                put("response_code", "200");
-                put("description", "Record not updated");
-                put("data", null);
-            }};
+            response.put("response_code", "200");
+            response.put("description", "Record not updated");
+            response.put("data", null);
         }
+
+        return response;
     }
+
     public Map<String, Object> updateUser(Map<String, Object> userParams, String userId){
+        Map<String, Object> response = new HashMap<>();
         Map<String, Object> userResponse = dbFunction.searchUserById(userId);
 
         if (userResponse != null) {
@@ -47,112 +47,103 @@ public class UserService {
             List<Map<String, Object>> updateUserResponse = dbFunction.updateUser(userParams);
 
             if(updateUserResponse != null){
-                if(updateUserResponse.size() > 0){
-                    return new HashMap<>() {{
-                        put("response_code", "201");
-                        put("description", "Success");
-                        put("data", updateUserResponse);
-                    }};
+                if(!updateUserResponse.isEmpty()){
+                    response.put("response_code", "201");
+                    response.put("description", "Success");
+                    response.put("data", updateUserResponse);
                 }else{
-                    return new HashMap<>() {{
-                        put("response_code", "400");
-                        put("description", "Unrecognized status");
-                        put("data", null);
-                    }};
+                    response.put("response_code", "400");
+                    response.put("description", "Unrecognized status");
+                    response.put("data", null);
                 }
             }else{
-                return new HashMap<>() {{
-                    put("response_code", "200");
-                    put("description", "Record not updated");
-                    put("data", null);
-                }};
+                response.put("response_code", "200");
+                response.put("description", "Record not updated");
+                response.put("data", null);
             }
         } else {
-            return new HashMap<>() {{
-                put("response_code", "404");
-                put("description", "User not found");
-                put("data", null);
-            }};
+            response.put("response_code", "404");
+            response.put("description", "User not found");
+            response.put("data", null);
         }
+
+        return response;
     }
-    public Map<String, Object> searchUserByEmailOrPhoneNumber(String searchTerm){
-        List<Map<String, Object>> searchUserResponse = dbFunction.searchUserByEmailOrPhoneNumber(searchTerm);
+
+    public Map<String, Object> searchUser(String searchTerm){
+        Map<String, Object> response = new HashMap<>();
+        Map<String, Object> searchUserResponse = dbFunction.searchUser(searchTerm);
 
         if(searchUserResponse != null){
-            return new HashMap<>() {{
-                put("response_code", "200");
-                put("description", "Success");
-                put("data", searchUserResponse);
-                put("page_size", searchUserResponse.size());
-            }};
+            response.put("response_code", "200");
+            response.put("description", "Success");
+            response.put("data", searchUserResponse);
         }else{
-            return new HashMap<>() {{
-                put("response_code", "404");
-                put("description", "User not found");
-                put("data", null);
-            }};
+            response.put("response_code", "404");
+            response.put("description", "User not found");
+            response.put("data", null);
         }
+
+        return response;
     }
+
     public Map<String, Object> listAllUsers(Map<String, Object> queryParams){
+        Map<String, Object> response = new HashMap<>();
         List<Map<String, Object>> listAllUsersResponse = dbFunction.listAllUsers(queryParams);
 
         if(listAllUsersResponse != null){
-            return new HashMap<>() {{
-                put("response_code", "200");
-                put("description", "Success");
-                put("data", listAllUsersResponse);
-                put("page_size", listAllUsersResponse.size());
-            }};
+            response.put("response_code", "200");
+            response.put("description", "Success");
+            response.put("data", listAllUsersResponse);
+            response.put("page_size", listAllUsersResponse.size());
         }else{
-            return new HashMap<>() {{
-                put("response_code", "404");
-                put("description", "No user found");
-                put("data", null);
-            }};
+            response.put("response_code", "404");
+            response.put("description", "No user found");
+            response.put("data", null);
         }
+
+        return response;
     }
+
     public Map<String, Object> searchUserById(String id){
+        Map<String, Object> response = new HashMap<>();
         Map<String, Object> searchUserResponse = dbFunction.searchUserById(id);
 
         if(searchUserResponse != null){
-            return new HashMap<>() {{
-                put("response_code", "200");
-                put("description", "Success");
-                put("data", searchUserResponse);
-            }};
+            response.put("response_code", "200");
+            response.put("description", "Success");
+            response.put("data", searchUserResponse);
         }else{
-            return new HashMap<>() {{
-                put("response_code", "404");
-                put("description", "User not found");
-                put("data", null);
-            }};
+            response.put("response_code", "404");
+            response.put("description", "User not found");
+            response.put("data", null);
         }
+
+        return response;
     }
+
     public Map<String, Object> deleteUser(String id){
+        Map<String, Object> response = new HashMap<>();
         Map<String, Object> searchUserResponse = dbFunction.searchUserById(id);
 
         if(searchUserResponse != null){
             Map<String, Object> deleteUserResponse = dbFunction.deleteUser(id);
 
             if(deleteUserResponse != null){
-                return new HashMap<>() {{
-                    put("response_code", "200");
-                    put("description", "Success");
-                    put("data", null);
-                }};
+                response.put("response_code", "200");
+                response.put("description", "Success");
+                response.put("data", null);
             }else{
-                return new HashMap<>() {{
-                    put("response_code", "200");
-                    put("description", "User not deleted");
-                    put("data", null);
-                }};
+                response.put("response_code", "200");
+                response.put("description", "User not deleted");
+                response.put("data", null);
             }
         }else{
-            return new HashMap<>() {{
-                put("response_code", "200");
-                put("description", "User not found");
-                put("data", null);
-            }};
+            response.put("response_code", "200");
+            response.put("description", "User not found");
+            response.put("data", null);
         }
+
+        return response;
     }
 }

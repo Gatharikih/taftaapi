@@ -16,10 +16,8 @@ import org.tafta.taftaapi.config.PropConfiguration;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -153,5 +151,89 @@ public class Utility {
         }
 
         return null;
+    }
+
+    public static LinkedHashMap<String, Object> cleanMap(LinkedHashMap<String, Object> map) {
+        if (map != null) {
+            LinkedHashMap<String, Object> retMap = new LinkedHashMap<>();
+
+            for (Map.Entry<String, Object> param : map.entrySet()) {
+                if (param.getValue() != null) {
+                    retMap.put(param.getKey(), param.getValue());
+                }
+            }
+
+            return retMap;
+        }
+
+        return null;
+    }
+
+    /**
+     * Format LocalDateTime based on the Pattern specified
+     *
+     * @param localDateTime time in LocalDateTime
+     * @param datePattern   pattern to format the date
+     * @return formatted date string
+     * @see LocalDateTime
+     * @see DateTimeFormatter
+     */
+    public static String formatDate(LocalDateTime localDateTime, String datePattern) {
+        try {
+            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(datePattern);
+            return dateTimeFormatter.format(localDateTime);
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Parse given date-time string based on the Pattern specified
+     *
+     * @param dateTimeStr date-time to parse
+     * @param datePattern pattern to format the date
+     * @return LocalDateTime
+     * @see LocalDateTime
+     * @see DateTimeFormatter
+     */
+    public static LocalDateTime parseDate(String dateTimeStr, String datePattern) {
+        try {
+            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(datePattern);
+            return LocalDateTime.parse(dateTimeStr, dateTimeFormatter);
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
+
+        return null;
+    }
+
+    /** Remove fields in a Map
+     * @param mapToModify the Map object to modify
+     * @param fieldsToPurge List of keys to remove from the map
+     * @return Map
+     * */
+    public static Object removeFieldsFromMap(Map<String, Object> mapToModify, List<String> fieldsToPurge) {
+        try {
+            if (mapToModify != null && !mapToModify.isEmpty() && fieldsToPurge != null && !fieldsToPurge.isEmpty()) {
+                mapToModify.forEach((key, value) ->{
+                    if(fieldsToPurge.contains(key)) mapToModify.remove(key);
+                });
+            }
+        } catch (Exception e) {
+            log.error("removeFieldsFromMap: " + e.getMessage());
+        }
+
+        return mapToModify;
+    }
+
+    public static Map<String, Object> getLimitAndOffset(int limit, Map<String, Object> queryParams){
+        int offset = (Integer.parseInt(String.valueOf(queryParams.getOrDefault("page_number", "0"))) - 1) * limit;
+
+        return new HashMap<>(){{
+            put("limit", limit);
+            put("offset", queryParams.get("page_number") != null ? Math.max(offset, 0) : 0);
+        }};
     }
 }

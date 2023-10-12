@@ -52,7 +52,7 @@ public class UserController {
     public ResponseEntity<Object> searchUser(@RequestParam("search_term") String searchTerm) {
         try {
             if (!searchTerm.isEmpty()) {
-                Map<String, Object> searchUserResponse = userService.searchUserByEmailOrPhoneNumber(searchTerm);
+                Map<String, Object> searchUserResponse = userService.searchUser(searchTerm);
 
                 return ResponseEntity.status(Integer.parseInt(searchUserResponse.get("response_code").toString())).body(searchUserResponse);
             } else {

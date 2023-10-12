@@ -17,12 +17,12 @@ import org.tafta.taftaapi.config.PropConfiguration;
 @Configuration
 public class DbConfiguration {
     @Autowired
-    private PropConfiguration config;
+    PropConfiguration config;
 
     private PoolProperties poolProperties() {
         PoolProperties pool = new PoolProperties();
 
-        String dbUrl =  "jdbc:postgresql://"+config.getDbHost()+":"+config.getDbPort()+"/"+config.getDatabase();
+        String dbUrl = "jdbc:postgresql://" + config.getDbHost() + ":" + config.getDbPort() + "/" + config.getDatabase();
 
         pool.setUrl(dbUrl);
         pool.setDriverClassName("org.postgresql.Driver");
@@ -46,7 +46,7 @@ public class DbConfiguration {
         pool.setRemoveAbandoned(true);
         pool.setJdbcInterceptors("org.apache.tomcat.jdbc.pool.interceptor.ConnectionState;org.apache.tomcat.jdbc.pool.interceptor.StatementFinalizer;org.apache.tomcat.jdbc.pool.interceptor.ResetAbandonedTimer");
 
-        log.info("Db Connection created "+pool.getInitialSize());
+        log.info("Db Connection created " + pool.getInitialSize());
 
         return pool;
     }

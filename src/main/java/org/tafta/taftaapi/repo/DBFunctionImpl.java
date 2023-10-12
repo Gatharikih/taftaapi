@@ -12,8 +12,9 @@ import org.springframework.stereotype.Component;
 import org.tafta.taftaapi.enums.CompanyStatus;
 import org.tafta.taftaapi.enums.PropertyStatus;
 import org.tafta.taftaapi.enums.Role_PermissionStatus;
-import org.tafta.taftaapi.enums.UserStatus;
+import org.tafta.taftaapi.enums.Status;
 import org.tafta.taftaapi.utility.ConvertTo;
+import org.tafta.taftaapi.utility.Utility;
 
 import javax.crypto.Mac;
 import java.nio.charset.StandardCharsets;
@@ -22,7 +23,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 /**
@@ -33,7 +33,7 @@ import java.util.*;
 
 @Slf4j
 @Component
-public class DBFunctionImpl implements DBFunction {
+public class DBFunctionImpl {
     @Autowired
     DbConnectionsHandler connectionsHandler;
     static Mac mac = null;
@@ -49,11 +49,16 @@ public class DBFunctionImpl implements DBFunction {
     }
 
     // <editor-fold default-state="collapsed" desc="NamedBaseExecute">
-    public <T> T NamedBaseExecute(String sql, LinkedHashMap<String, Object> collection, LinkedHashMap<String, Object> whereCollection, ResultHandler<T> handler) {
+    public <T> T NamedBaseExecute(String sql, LinkedHashMap<String, Object> collection,
+                                  LinkedHashMap<String, Object> whereCollection,
+                                  ResultHandler<T> handler) {
         return NamedBaseExecute(sql, collection, whereCollection, handler, "");
     }
 
-    public <T> T NamedBaseExecute(String sql, LinkedHashMap<String, Object> collection, LinkedHashMap<String, Object> whereCollection, ResultHandler<T> handler, String profile) {
+    public <T> T NamedBaseExecute(String sql, LinkedHashMap<String, Object> collection,
+                                  LinkedHashMap<String, Object> whereCollection,
+                                  ResultHandler<T> handler,
+                                  String profile) {
         T output = null;
         Connection connection = null;
         ResultSet rs = null;
@@ -65,7 +70,7 @@ public class DBFunctionImpl implements DBFunction {
             }
 
             // use connection
-            DbQuery query = new DbQuery(dbOom, connection, sql);
+            DbQuery<?> query = new DbQuery<>(dbOom, connection, sql);
 
             int paramIndex = 1;
 
@@ -114,10 +119,6 @@ public class DBFunctionImpl implements DBFunction {
                     log.error(e.getMessage());
 
                     exceptions.put("errors", e.getCause().getMessage());
-
-                    for (StackTraceElement ste : e.getStackTrace()) {
-                        log.error(ste.toString());
-                    }
                 }
             }
         }
@@ -129,53 +130,34 @@ public class DBFunctionImpl implements DBFunction {
         T handle(ResultSet rs);
     }
     // </editor-fold>
-    //
-    // <editor-fold default-state="collapsed" desc="cleanMap(LinkedHashMap<String, Object> map)">
-    public static LinkedHashMap<String, Object> cleanMap(LinkedHashMap<String, Object> map) {
-        if (map != null) {
-            LinkedHashMap<String, Object> retMap = new LinkedHashMap<>();
 
-            for (Map.Entry<String, Object> param : map.entrySet()) {
-                if (param.getValue() != null) {
-                    retMap.put(param.getKey(), param.getValue());
-                }
-            }
-
-            return retMap;
-        }
-
-        return null;
-    }
-    // </editor-fold>
-    //
-
-    /*-------------------- USERS -------------------------*/
+    /**-------------------- USERS -------------------------*/
 
     // <editor-fold default-state="collapsed" desc="createUser(Map<String, Object> entryParams)">
-    @Override
     public List<Map<String, Object>> createUser(Map<String, Object> entryParams) {
         LinkedHashMap<String, Object> params = new LinkedHashMap<>();
 
         if(entryParams.get("company_id") != null){
-            params.put("company_id", entryParams.get("company_id").toString());
+            params.put("company_id", entryParams.get("company_id"));
         }
         params.put("role_id", Optional.ofNullable(entryParams.get("role_id"))
-                .orElse(!getUserRoleId("user").isEmpty() ? Integer.parseInt(getUserRoleId("user").get(0).get("id").toString()) : 5));
+                .orElse(!getUserRoleId("user").isEmpty() ?
+                        Integer.parseInt(String.valueOf(getUserRoleId("user").get(0).get("id"))) : 5));
 
         if(entryParams.get("fullname") != null){
-            params.put("fullname", entryParams.get("fullname").toString());
+            params.put("fullname", entryParams.get("fullname"));
         }
 
         if(entryParams.get("email") != null){
-            params.put("email", entryParams.get("email").toString());
+            params.put("email", entryParams.get("email"));
         }
 
         if(entryParams.get("password") != null){
-            params.put("password", entryParams.get("password").toString());
+            params.put("password", entryParams.get("password"));
         }
 
         if(entryParams.get("msisdn") != null){
-            params.put("msisdn", entryParams.get("msisdn").toString());
+            params.put("msisdn", entryParams.get("msisdn"));
         }
 
         if(entryParams.get("reset_password") != null){
@@ -184,13 +166,14 @@ public class DBFunctionImpl implements DBFunction {
 
         if(entryParams.get("status") != null){
             try {
-                params.put("status", Optional.of(UserStatus.getUserStatusType(entryParams.get("status").toString())).orElse(UserStatus.getUserStatusType("active")));
+                params.put("status", Optional.of(Status.getStatusType(String.valueOf(entryParams.get("status"))))
+                        .orElse(Status.getStatusType("active")));
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                log.error(e.getMessage());
             }
         }
 
-        params = cleanMap(params);
+        params = Utility.cleanMap(params);
 
         String sql;
         String table = "users";
@@ -209,30 +192,30 @@ public class DBFunctionImpl implements DBFunction {
     // </editor-fold>
     //
     // <editor-fold default-state="collapsed" desc="updateUser(Map<String, Object> entryParams)">
-    @Override
     public List<Map<String, Object>> updateUser(Map<String, Object> entryParams) {
         LinkedHashMap<String, Object> params = new LinkedHashMap<>();
 
         if(entryParams.get("company_id") != null){
-            params.put("company_id", entryParams.get("company_id").toString());
+            params.put("company_id", entryParams.get("company_id"));
         }
         params.put("role_id", Optional.ofNullable(entryParams.get("role_id"))
-                .orElse(!getUserRoleId("user").isEmpty() ? Integer.parseInt(getUserRoleId("user").get(0).get("id").toString()) : 5));
+                .orElse(!getUserRoleId("user").isEmpty() ?
+                        Integer.parseInt(String.valueOf(getUserRoleId("user").get(0).get("id"))) : 5));
 
         if(entryParams.get("fullname") != null){
-            params.put("fullname", entryParams.get("fullname").toString());
+            params.put("fullname", entryParams.get("fullname"));
         }
 
         if(entryParams.get("email") != null){
-            params.put("email", entryParams.get("email").toString());
+            params.put("email", entryParams.get("email"));
         }
 
         if(entryParams.get("password") != null){
-            params.put("password", entryParams.get("password").toString());
+            params.put("password", entryParams.get("password"));
         }
 
         if(entryParams.get("msisdn") != null){
-            params.put("msisdn", entryParams.get("msisdn").toString());
+            params.put("msisdn", entryParams.get("msisdn"));
         }
 
         if(entryParams.get("reset_password") != null){
@@ -241,11 +224,10 @@ public class DBFunctionImpl implements DBFunction {
 
         if(entryParams.get("status") != null){
             try {
-                params.put("status", UserStatus.getUserStatusType(entryParams.get("status").toString()));
+                params.put("status", Status.getStatusType(String.valueOf(entryParams.get("status"))));
             } catch (Exception e) {
                 log.error(e.getMessage());
 
-//                throw new RuntimeException("Unrecognized status");
                 return new ArrayList<>();
             }
         }
@@ -253,14 +235,14 @@ public class DBFunctionImpl implements DBFunction {
         params.put("updated_at", Timestamp.valueOf(LocalDateTime.now()));
         params.put("deleted_at", null);
 
-        params = cleanMap(params);
+        params = Utility.cleanMap(params);
 
         LinkedHashMap<String, Object> where_params = new LinkedHashMap<>();
 
         String sql;
         String table = "users";
 
-        where_params.put("id", Integer.parseInt(entryParams.get("id").toString()));
+        where_params.put("id", Integer.parseInt(String.valueOf(entryParams.get("id"))));
 
         sql = Models.UpdateString(table, params, where_params);
 
@@ -277,7 +259,6 @@ public class DBFunctionImpl implements DBFunction {
     // </editor-fold>
     //
     // <editor-fold default-state="collapsed" desc="getUserRoleId(String roleName)">
-    @Override
     public List<Map<String, Object>> getUserRoleId(String roleName) {
         LinkedHashMap<String, Object> param = new LinkedHashMap<>();
         String sql = "SELECT id FROM roles WHERE name=:name OR description =:name LIMIT 1";
@@ -289,36 +270,53 @@ public class DBFunctionImpl implements DBFunction {
     }
     // </editor-fold>
     //
-    // <editor-fold default-state="collapsed" desc="searchUserByEmailOrPhoneNumber(String searchTerm)">
-    @Override
-    public List<Map<String, Object>> searchUserByEmailOrPhoneNumber(String searchTerm) {
+    // <editor-fold default-state="collapsed" desc="searchUser(String searchTerm)">
+    public Map<String, Object> searchUser(String searchTerm) {
         LinkedHashMap<String, Object> param = new LinkedHashMap<>();
-        String sql = "SELECT * FROM users WHERE email=:email OR msisdn=:msisdn OR name=:name LIMIT 1 ORDER BY id, created_at ASC";
+        String sql = "SELECT * FROM users WHERE email=:email OR msisdn=:msisdn OR fullname=:fullname LIMIT 1 ORDER BY id, created_at ASC";
 
         param.put("email", searchTerm);
         param.put("msisdn", searchTerm);
-        param.put("name", searchTerm);
+        param.put("fullname", searchTerm);
 
         List<Map<String, Object>> user = NamedBaseExecute(sql, param, null, new MapResultHandler());
 
-        return !user.isEmpty() ? user : null;
+        return !user.isEmpty() ? user.get(0) : null;
+    }
+    // </editor-fold>
+    //
+    // <editor-fold default-state="collapsed" desc="findUserUsingEmailAndApiPassword(String email, String apiPassword)">
+    public Map<String, Object> findActiveUserUsingEmail(String email) {
+        LinkedHashMap<String, Object> param = new LinkedHashMap<>();
+
+        String sql = "SELECT * FROM users WHERE email=:email AND UPPER(status)=:status ";
+
+        param.put("email", email);
+        param.put("status", "ACTIVE");
+
+        List<Map<String, Object>> results = NamedBaseExecute(sql, param, null, new MapResultHandler());
+
+        if (results != null && !results.isEmpty()) {
+            return results.get(0);
+        }
+
+        return null;
     }
     // </editor-fold>
     //
     // <editor-fold default-state="collapsed" desc="List<Map<String, Object>>listAllUsers(String pageNumber) ">
-    @Override
     public List<Map<String, Object>> listAllUsers(Map<String, Object> queryParams) {
         LinkedHashMap<String, Object> params = new LinkedHashMap<>();
         LinkedHashMap<String, Object> where_param = new LinkedHashMap<>();
         String sql = "SELECT * FROM users WHERE status=:status ORDER BY id, created_at ASC LIMIT :limit OFFSET :offset";
 
-        params = cleanMap(params);
+        params = Utility.cleanMap(params);
 
         int limit = 50;
 
-        where_param.put("status", queryParams.getOrDefault("status", "ACTIVE").toString());
+        where_param.put("status", queryParams.getOrDefault("status", "ACTIVE"));
         where_param.put("limit", limit);
-        where_param.put("offset", Integer.parseInt(queryParams.getOrDefault("page_number", "0").toString()) * limit);
+        where_param.put("offset", Integer.parseInt(String.valueOf(queryParams.getOrDefault("page_number", "0"))) * limit);
 
         log.error("where_param: " + where_param);
 
@@ -329,7 +327,6 @@ public class DBFunctionImpl implements DBFunction {
     // </editor-fold>
     //
     // <editor-fold default-state="collapsed" desc="searchUserById(String id)">
-    @Override
     public Map<String, Object> searchUserById(String id) {
         LinkedHashMap<String, Object> param = new LinkedHashMap<>();
         String sql = "SELECT * FROM users WHERE id=:id LIMIT 1";
@@ -343,11 +340,10 @@ public class DBFunctionImpl implements DBFunction {
     // </editor-fold>
     //
     // <editor-fold default-state="collapsed" desc="deleteUser(String id)">
-    @Override
     public Map<String, Object> deleteUser(String id) {
         LinkedHashMap<String, Object> params = new LinkedHashMap<>();
 
-        params.put("status", UserStatus.DELETED);
+        params.put("status", Status.DELETED);
         params.put("deleted_at", Timestamp.valueOf(LocalDateTime.now()));
 
         LinkedHashMap<String, Object> where_params = new LinkedHashMap<>();
@@ -371,127 +367,130 @@ public class DBFunctionImpl implements DBFunction {
         return null;
     }
     // </editor-fold>
-    //
 
-    /*-------------------- PROPERTIES -------------------------*/
+    /**-------------------- PROPERTIES -------------------------*/
 
-    // <editor-fold default-state="collapsed" desc="searchPropertyById(String id)">
-    @Override
-    public Map<String, Object> searchPropertyById(String id) {
-        LinkedHashMap<String, Object> param = new LinkedHashMap<>();
-        String sql = "SELECT * FROM properties WHERE id=:id LIMIT 1";
+    // <editor-fold default-state="collapsed" desc="searchPropertyById(String propertyId)">
+    public Map<String, Object> searchPropertyById(String propertyId) {
+        try {
+            LinkedHashMap<String, Object> param = new LinkedHashMap<>();
+            String sql = "SELECT * FROM properties WHERE property_id=:property_id LIMIT 1";
 
-        param.put("id", Integer.parseInt(id));
+            param.put("property_id", propertyId.trim());
 
-        List<Map<String, Object>> properties = NamedBaseExecute(sql, param, null, new MapResultHandler());
+            List<Map<String, Object>> properties = NamedBaseExecute(sql, param, null, new MapResultHandler());
 
-        return !properties.isEmpty() ? properties.get(0) : null;
+            return !properties.isEmpty() ? properties.get(0) : null;
+        } catch (Exception e) {
+            log.error(e.getMessage());
+
+            return null;
+        }
     }
     // </editor-fold>
     //
     // <editor-fold default-state="collapsed" desc="searchProperties(Map<String, Object> searchMap)">
-    @Override
     public List<Map<String, Object>> searchProperties(Map<String, Object> searchMap) {
-        LinkedHashMap<String, Object> param = new LinkedHashMap<>();
-        String searchTermsStr = "";
-        trackQuery = 0;
+        try {
+            LinkedHashMap<String, Object> param = new LinkedHashMap<>();
+            Map<String, Object> limitAndOffset = Utility.getLimitAndOffset(50, searchMap);
 
-        if(searchMap.get("county") != null){
-            if(trackQuery >= 1) {
-                searchTermsStr += " AND LOWER(county)=LOWER(" + searchMap.get("county").toString() + ")";
-            }else{
-                searchTermsStr += " LOWER(county)=LOWER(" + searchMap.get("county").toString() + ")";
+            int limit = Integer.parseInt(String.valueOf(limitAndOffset.get("limit")));
+            int offset = Integer.parseInt(String.valueOf(limitAndOffset.get("offset")));
+
+            LinkedHashMap<String, Object> where_param = new LinkedHashMap<>(){{
+                put("status", searchMap.getOrDefault("status", "ACTIVE"));
+                put("limit", limit);
+                put("offset", offset);
+            }};
+
+            String searchTermsStr = "";
+            trackQuery = 0;
+
+            if(searchMap.get("county") != null){
+                if(trackQuery >= 1) {
+                    searchTermsStr += " AND LOWER(county) LIKE '%" + searchMap.get("county") + "%'";
+                }else{
+                    searchTermsStr += " LOWER(county) LIKE '%" + searchMap.get("county") + "%'";
+                }
+
+                trackQuery++;
             }
 
-            trackQuery = trackQuery + 1;
-        }
+            if(searchMap.get("max_price") != null){
+                if(trackQuery >= 1) {
+                    searchTermsStr += " AND CAST (maximum_price AS INTEGER) <= " + Integer.parseInt(String.valueOf(searchMap.get("max_price")));
+                }else{
+                    searchTermsStr += " CAST (maximum_price AS INTEGER) <= " + Integer.parseInt(String.valueOf(searchMap.get("max_price")));
+                }
 
-        if(searchMap.get("property_name") != null){
-            if(trackQuery >= 1){
-                searchTermsStr += " AND LOWER(property_name)=LOWER(" + searchMap.get("property_name").toString() + ")";
-            }else{
-                searchTermsStr += " LOWER(property_name)=LOWER(" + searchMap.get("property_name").toString() + ")";
+                trackQuery++;
             }
 
-            trackQuery = trackQuery + 1;
-        }
+            if(searchMap.get("min_price") != null){
+                if(trackQuery >= 1) {
+                    searchTermsStr += " AND CAST (minimum_price AS INTEGER) >= " + Integer.parseInt(String.valueOf(searchMap.get("min_price")));
+                }else{
+                    searchTermsStr += " CAST (minimum_price AS INTEGER) >= " + Integer.parseInt(String.valueOf(searchMap.get("min_price")));
+                }
 
-        if(searchMap.get("min_price") != null){
-            if(trackQuery >= 1) {
-                searchTermsStr += " AND CAST (property_price AS INTEGER) >= " + Integer.parseInt(searchMap.get("min_price").toString());
-            }else{
-                searchTermsStr += " CAST (property_price AS INTEGER) >= " + Integer.parseInt(searchMap.get("min_price").toString());
+                trackQuery++;
             }
 
-            trackQuery = trackQuery + 1;
-        }
+            if(searchMap.get("location") != null){
+                if(trackQuery >= 1) {
+                    searchTermsStr += " AND LOWER(location) LIKE LOWER('%" + searchMap.get("location") + "%')";
+                }else{
+                    searchTermsStr += " LOWER(location) LIKE LOWER('%" + searchMap.get("location") + "%')";
+                }
 
-        if(searchMap.get("max_price") != null){
-            if(trackQuery >= 1) {
-                searchTermsStr += " AND CAST (property_price AS INTEGER) <= " + Integer.parseInt(searchMap.get("max_price").toString());
-            }else{
-                searchTermsStr += " CAST (property_price AS INTEGER) <= " + Integer.parseInt(searchMap.get("max_price").toString());
+                trackQuery++;
             }
+
+            String sql = "SELECT * FROM properties WHERE " + searchTermsStr + " AND LOWER(status)=LOWER(:status) ORDER BY id, created_at ASC LIMIT :limit OFFSET :offset";
+
+            log.error("sql: " + sql);
+
+            List<Map<String, Object>> properties = NamedBaseExecute(sql, param, where_param, new MapResultHandler());
+
+            return !properties.isEmpty() ? properties : null;
+        } catch (NumberFormatException e) {
+            return null;
         }
-
-        if(searchMap.get("property_price") != null){
-            if(trackQuery >= 1) {
-                searchTermsStr += " and property_price=" + searchMap.get("property_price").toString();
-            }else{
-                searchTermsStr += " property_price=" + searchMap.get("property_price").toString();
-            }
-        }
-
-        if(searchMap.get("description") != null){
-            if(trackQuery >= 1) {
-                searchTermsStr += " and LOWER(property_description) LIKE LOWER('%" + searchMap.get("description").toString() + "%')";
-            }else{
-                searchTermsStr += " LOWER(property_description) LIKE LOWER('%" + searchMap.get("description").toString() + "%')";
-            }
-        }
-
-        if(searchMap.get("location") != null){
-            if(trackQuery >= 1) {
-                searchTermsStr += " and LOWER(location) LIKE LOWER('%" + searchMap.get("location").toString() + "%')";
-            }else{
-                searchTermsStr += " LOWER(location) LIKE LOWER('%" + searchMap.get("location").toString() + "%')";
-            }
-        }
-
-        String sql = "SELECT * FROM properties WHERE " + searchTermsStr + " ORDER BY id, created_at ASC LIMIT 1";
-
-        log.error("sql11: " + sql);
-
-        List<Map<String, Object>> properties = NamedBaseExecute(sql, param, null, new MapResultHandler());
-
-        return !properties.isEmpty() ? properties : null;
     }
     // </editor-fold>
     //
     // <editor-fold default-state="collapsed" desc="deleteProperty(String id)">
-    @Override
-    public Map<String, Object> deleteProperty(String id) {
-        LinkedHashMap<String, Object> params = new LinkedHashMap<>();
+    public Map<String, Object> deleteProperty(String propertyId) {
+        try {
+            LinkedHashMap<String, Object> params = new LinkedHashMap<>();
 
-        params.put("status", PropertyStatus.DELETED);
-        params.put("deleted_at", Timestamp.valueOf(LocalDateTime.now()));
+            LocalDateTime now = LocalDateTime.now();
 
-        LinkedHashMap<String, Object> where_params = new LinkedHashMap<>();
-        where_params.put("id", Integer.parseInt(id));
+            params.put("status", PropertyStatus.DELETED.name());
+            params.put("deleted_at", now);
+            params.put("updated_by", "admin");
 
-        String sql;
-        String table = "properties";
+            params = Utility.cleanMap(params);
 
-        where_params.put("id", Integer.parseInt(id));
+            LinkedHashMap<String, Object> where_params = new LinkedHashMap<>(){{
+                put("property_id", propertyId);
+            }};
 
-        sql = Models.UpdateString(table, params, where_params);
+            String sql;
+            String table = "properties";
 
-        sql += " returning *";
+            sql = Models.UpdateString(table, params, where_params);
 
-        List<Map<String, Object>> results = NamedBaseExecute(sql, params, where_params, new MapResultHandler());
+            sql += " returning *";
 
-        if(!results.isEmpty()){
-            return results.get(0);
+            List<Map<String, Object>> results = NamedBaseExecute(sql, params, where_params, new MapResultHandler());
+
+            if(!results.isEmpty()){
+                return results.get(0);
+            }
+        } catch (NumberFormatException e) {
+            log.error(e.getMessage());
         }
 
         return null;
@@ -499,55 +498,55 @@ public class DBFunctionImpl implements DBFunction {
     // </editor-fold>
     //
     // <editor-fold default-state="collapsed" desc="createProperty(Map<String, Object> entryParams)">
-    @Override
-    public List<Map<String, Object>> createProperty(Map<String, Object> entryParams) {
-        LinkedHashMap<String, Object> params = new LinkedHashMap<>();
+    public Map<String, Object> createProperty(Map<String, Object> entryParams) {
+        try {
+            LinkedHashMap<String, Object> params = new LinkedHashMap<>();
 
-        params.put("county", entryParams.get("county").toString());
-        params.put("latitude", entryParams.get("latitude").toString());
-        params.put("longitude", entryParams.get("longitude").toString());
-        params.put("location", entryParams.get("location").toString());
-        params.put("property_description", entryParams.get("property_description").toString());
-        params.put("property_name", entryParams.get("property_name").toString());
-        params.put("property_price", entryParams.get("property_price").toString());
-        params.put("manager", entryParams.get("role_id"));
-        params.put("maximum_price", entryParams.get("maximum_price").toString());
-        params.put("metadata", entryParams.get("metadata").toString());
-        params.put("minimum_price", entryParams.get("minimum_price").toString());
+            // A date-time without a time-zone in the ISO-8601 calendar system, such as 2007-12-03T10:15:30.
+            LocalDateTime now = LocalDateTime.now();
 
-        if(entryParams.get("property_id") != null){
-            params.put("property_id", entryParams.get("property_id").toString());
-        }else{
-            String propertyId = UUID.randomUUID().toString();
+            params.put("company", entryParams.get("company"));
+            params.put("county", entryParams.get("county"));
+            params.put("created_at", now);
+            params.put("created_by", entryParams.get("user")); // TODO: Get user from authentication context
+            params.put("latitude", entryParams.get("latitude"));
+            params.put("location", entryParams.get("location"));
+            params.put("longitude", entryParams.get("longitude"));
+            params.put("maximum_price", entryParams.get("maximum_price"));
+            params.put("metadata", entryParams.get("metadata"));
+            params.put("minimum_price", entryParams.get("minimum_price"));
+            params.put("property_description", entryParams.get("property_description"));
+            params.put("property_id", entryParams.get("property_id"));
+            params.put("property_name", entryParams.get("property_name"));
+            params.put("property_price", entryParams.get("property_price"));
+            params.put("property_type", entryParams.get("property_type"));
+            params.put("property_amenities", entryParams.get("property_amenities"));
+            params.put("published_at", now);
 
-            params.put("property_id", propertyId);
-        }
+            params.put("status", entryParams.get("status") != null ? Optional.of(Status.getStatusType(String.valueOf(entryParams.get("status"))))
+                    .orElse(Status.getStatusType("active")) : Status.getStatusType("active"));
 
-        if(entryParams.get("status") != null){
-            try {
-                params.put("status", Optional.of(UserStatus.getUserStatusType(entryParams.get("status").toString()))
-                        .orElse(UserStatus.getUserStatusType("active")));
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+            params.put("updated_at", now);
+            params.put("updated_by", entryParams.get("user"));
+
+            params.put("verified", entryParams.get("verified") != null ?
+                    Boolean.parseBoolean((String.valueOf(entryParams.getOrDefault("verified", false)))) : Boolean.FALSE);
+
+            params = Utility.cleanMap(params);
+
+            String sql;
+            String table = "properties";
+
+            sql = Models.InsertString(table, params);
+            sql += " returning *";
+
+            List<Map<String, Object>> results = NamedBaseExecute(sql, params, null, new MapResultHandler());
+
+            if(!results.isEmpty()){
+                return results.get(0);
             }
-        }
-
-        if(entryParams.get("verified") != null){
-            params.put("verified", Boolean.parseBoolean(entryParams.getOrDefault("verified", false).toString()));
-        }
-
-        params = cleanMap(params);
-
-        String sql;
-        String table = "properties";
-
-        sql = Models.InsertString(table, params);
-        sql += " returning *";
-
-        List<Map<String, Object>> results = NamedBaseExecute(sql, params, null, new MapResultHandler());
-
-        if(!results.isEmpty()){
-            return results;
+        } catch (Exception e) {
+            log.error(e.getMessage());
         }
 
         return null;
@@ -555,95 +554,58 @@ public class DBFunctionImpl implements DBFunction {
     // </editor-fold>
     //
     // <editor-fold default-state="collapsed" desc="updateProperty(Map<String, Object> entryParams)">
-    @Override
-    public List<Map<String, Object>> updateProperty(Map<String, Object> entryParams) {
+    public Map<String, Object> updateProperty(Map<String, Object> entryParams) {
         LinkedHashMap<String, Object> params = new LinkedHashMap<>();
 
-        if(entryParams.get("county") != null) {
-            params.put("county", entryParams.get("county").toString());
-        }
+        try {
+            LocalDateTime now = LocalDateTime.now();
 
-        if(entryParams.get("latitude") != null) {
-            params.put("latitude", entryParams.get("latitude").toString());
-        }
+            params.put("company", entryParams.get("company"));
+            params.put("county", entryParams.get("county"));
+            params.put("created_at", now);
+            params.put("created_by", entryParams.get("user")); // TODO: Get user from authentication context
+            params.put("latitude", entryParams.get("latitude"));
+            params.put("location", entryParams.get("location"));
+            params.put("longitude", entryParams.get("longitude"));
+            params.put("maximum_price", entryParams.get("maximum_price"));
+            params.put("metadata", entryParams.get("metadata"));
+            params.put("minimum_price", entryParams.get("minimum_price"));
+            params.put("property_description", entryParams.get("property_description"));
+            params.put("property_name", entryParams.get("property_name"));
+            params.put("property_price", entryParams.get("property_price"));
+            params.put("property_type", entryParams.get("property_type"));
+            params.put("property_amenities", entryParams.get("property_amenities"));
+            params.put("published_at", now);
 
-        if(entryParams.get("longitude") != null) {
-            params.put("longitude", entryParams.get("longitude").toString());
-        }
+            params.put("status", entryParams.get("status") != null ? Optional.of(Status.getStatusType(String.valueOf(entryParams.get("status"))))
+                    .orElse(Status.getStatusType("active")) : Status.getStatusType("active"));
 
-        if(entryParams.get("location") != null) {
-            params.put("location", entryParams.get("location").toString());
-        }
+            params.put("updated_at", now);
+            params.put("updated_by", entryParams.get("user"));
 
-        if(entryParams.get("property_description") != null) {
-            params.put("property_description", entryParams.get("property_description").toString());
-        }
+            params.put("verified", entryParams.get("verified") != null ?
+                    Boolean.parseBoolean((String.valueOf(entryParams.getOrDefault("verified", false)))) : Boolean.FALSE);
 
-        if(entryParams.get("property_name") != null) {
-            params.put("property_name", entryParams.get("property_name").toString());
-        }
+            params = Utility.cleanMap(params);
 
-        if(entryParams.get("property_price") != null) {
-            params.put("property_price", entryParams.get("property_price").toString());
-        }
+            LinkedHashMap<String, Object> where_params = new LinkedHashMap<>(){{
+                put("property_id", String.valueOf(entryParams.get("property_id")));
+            }};
 
-        if(entryParams.get("manager") != null) {
-            params.put("manager", entryParams.get("role_id"));
-        }
+            String sql;
+            String table = "properties";
 
-        if(entryParams.get("maximum_price") != null){
-            params.put("maximum_price", entryParams.get("maximum_price").toString());
-        }
+            sql = Models.UpdateString(table, params, where_params);
 
-        if(entryParams.get("metadata") != null){
-            params.put("metadata", entryParams.get("metadata").toString());
-        }
+            sql += " returning *";
 
-        if(entryParams.get("minimum_price") != null){
-            params.put("minimum_price", entryParams.get("minimum_price").toString());
-        }
+            List<Map<String, Object>> results = NamedBaseExecute(sql, params, where_params, new MapResultHandler());
 
-        if(entryParams.get("status") != null){
-            try {
-                params.put("status", UserStatus.getUserStatusType(entryParams.get("status").toString()));
-
-                if(UserStatus.getUserStatusType(entryParams.get("status").toString()).equalsIgnoreCase(PropertyStatus.DELETED.name())){
-                    params.put("deleted_at", Timestamp.valueOf(LocalDateTime.now()));
-                }
-            } catch (Exception e) {
-                log.error(e.getMessage());
-
-                throw new RuntimeException(e);
+            if(!results.isEmpty()){
+                return results.get(0);
             }
-        }
-
-        if(entryParams.get("verified") != null){
-            params.put("verified", Boolean.parseBoolean(entryParams.getOrDefault("verified", false).toString()));
-        }
-
-        params.put("updated_at", Timestamp.valueOf(LocalDateTime.now()));
-
-        params = cleanMap(params);
-
-        LinkedHashMap<String, Object> where_params = new LinkedHashMap<>();
-
-        String sql;
-        String table = "properties";
-
-        if(entryParams.get("id") != null) {
-            where_params.put("id", Integer.parseInt(entryParams.get("id").toString()));
-        }else{
-            return null;
-        }
-
-        sql = Models.UpdateString(table, params, where_params);
-
-        sql += " returning *";
-
-        List<Map<String, Object>> results = NamedBaseExecute(sql, params, where_params, new MapResultHandler());
-
-        if(!results.isEmpty()){
-            return results;
+        } catch (Exception e) {
+            log.error(e.getMessage());
         }
 
         return null;
@@ -651,34 +613,29 @@ public class DBFunctionImpl implements DBFunction {
     // </editor-fold>
     //
     // <editor-fold default-state="collapsed" desc="List<Map<String, Object>>listAllProperties(String pageNumber) ">
-    @Override
     public List<Map<String, Object>> listAllProperties(Map<String, Object> queryParams) {
         LinkedHashMap<String, Object> where_param = new LinkedHashMap<>();
 
         String sql = "SELECT * FROM properties WHERE LOWER(status)=LOWER(:status) ORDER BY id, created_at ASC LIMIT :limit OFFSET :offset";
 
-        int limit = 50;
+        Map<String, Object> limitAndOffset = Utility.getLimitAndOffset(50, queryParams);
 
-        where_param.put("status", UserStatus.valueOf(queryParams.getOrDefault("status", "ACTIVE").toString()));
+        int limit = Integer.parseInt(String.valueOf(limitAndOffset.get("limit")));
+        int offset = Integer.parseInt(String.valueOf(limitAndOffset.get("offset")));
+
+        where_param.put("status", queryParams.getOrDefault("status", "ACTIVE"));
         where_param.put("limit", limit);
-
-        if(queryParams.get("page_number") == null){
-            where_param.put("offset", 0);
-        }else{
-            where_param.put("offset", (Integer.parseInt(queryParams.getOrDefault("page_number", "0").toString()) - 1)* limit);
-        }
+        where_param.put("offset", offset);
 
         List<Map<String, Object>> property = NamedBaseExecute(sql, null, where_param, new MapResultHandler());
 
         return !property.isEmpty() ? property : null;
     }
     // </editor-fold>
-    //
 
-    /*-------------------- COMPANIES -------------------------*/
+    /**-------------------- COMPANIES -------------------------*/
 
     // <editor-fold default-state="collapsed" desc="searchCompanyById(String id)">
-    @Override
     public Map<String, Object> searchCompanyById(String id) {
         LinkedHashMap<String, Object> param = new LinkedHashMap<>();
         String sql = "SELECT * FROM companies WHERE id=:id LIMIT 1";
@@ -692,7 +649,6 @@ public class DBFunctionImpl implements DBFunction {
     // </editor-fold>
     //
     // <editor-fold default-state="collapsed" desc="searchCompanies(Map<String, Object> searchMap)">
-    @Override
     public List<Map<String, Object>> searchCompanies(Map<String, Object> searchMap) {
         LinkedHashMap<String, Object> param = new LinkedHashMap<>();
         String searchTermsStr = "";
@@ -700,9 +656,9 @@ public class DBFunctionImpl implements DBFunction {
 
         if(searchMap.get("county") != null){
             if(trackQuery >= 1) {
-                searchTermsStr += " AND LOWER(county)=LOWER(" + searchMap.get("county").toString() + ")";
+                searchTermsStr += " AND LOWER(county)=LOWER(" + searchMap.get("county") + ")";
             }else{
-                searchTermsStr += " LOWER(county)=LOWER(" + searchMap.get("county").toString() + ")";
+                searchTermsStr += " LOWER(county)=LOWER(" + searchMap.get("county") + ")";
             }
 
             trackQuery = trackQuery + 1;
@@ -710,9 +666,9 @@ public class DBFunctionImpl implements DBFunction {
 
         if(searchMap.get("property_name") != null){
             if(trackQuery >= 1){
-                searchTermsStr += " AND LOWER(property_name)=LOWER(" + searchMap.get("property_name").toString() + ")";
+                searchTermsStr += " AND LOWER(property_name)=LOWER(" + searchMap.get("property_name") + ")";
             }else{
-                searchTermsStr += " LOWER(property_name)=LOWER(" + searchMap.get("property_name").toString() + ")";
+                searchTermsStr += " LOWER(property_name)=LOWER(" + searchMap.get("property_name") + ")";
             }
 
             trackQuery = trackQuery + 1;
@@ -720,9 +676,9 @@ public class DBFunctionImpl implements DBFunction {
 
         if(searchMap.get("min_price") != null){
             if(trackQuery >= 1) {
-                searchTermsStr += " AND CAST (property_price AS INTEGER) >= " + Integer.parseInt(searchMap.get("min_price").toString());
+                searchTermsStr += " AND CAST (property_price AS INTEGER) >= " + Integer.parseInt(String.valueOf(searchMap.get("min_price")));
             }else{
-                searchTermsStr += " CAST (property_price AS INTEGER) >= " + Integer.parseInt(searchMap.get("min_price").toString());
+                searchTermsStr += " CAST (property_price AS INTEGER) >= " + Integer.parseInt(String.valueOf(searchMap.get("min_price")));
             }
 
             trackQuery = trackQuery + 1;
@@ -730,33 +686,33 @@ public class DBFunctionImpl implements DBFunction {
 
         if(searchMap.get("max_price") != null){
             if(trackQuery >= 1) {
-                searchTermsStr += " AND CAST (property_price AS INTEGER) <= " + Integer.parseInt(searchMap.get("max_price").toString());
+                searchTermsStr += " AND CAST (property_price AS INTEGER) <= " + Integer.parseInt(String.valueOf(searchMap.get("max_price")));
             }else{
-                searchTermsStr += " CAST (property_price AS INTEGER) <= " + Integer.parseInt(searchMap.get("max_price").toString());
+                searchTermsStr += " CAST (property_price AS INTEGER) <= " + Integer.parseInt(String.valueOf(searchMap.get("max_price")));
             }
         }
 
         if(searchMap.get("property_price") != null){
             if(trackQuery >= 1) {
-                searchTermsStr += " and property_price=" + searchMap.get("property_price").toString();
+                searchTermsStr += " and property_price=" + searchMap.get("property_price");
             }else{
-                searchTermsStr += " property_price=" + searchMap.get("property_price").toString();
+                searchTermsStr += " property_price=" + searchMap.get("property_price");
             }
         }
 
         if(searchMap.get("description") != null){
             if(trackQuery >= 1) {
-                searchTermsStr += " and LOWER(property_description) LIKE LOWER('%" + searchMap.get("description").toString() + "%')";
+                searchTermsStr += " and LOWER(property_description) LIKE LOWER('%" + searchMap.get("description") + "%')";
             }else{
-                searchTermsStr += " LOWER(property_description) LIKE LOWER('%" + searchMap.get("description").toString() + "%')";
+                searchTermsStr += " LOWER(property_description) LIKE LOWER('%" + searchMap.get("description") + "%')";
             }
         }
 
         if(searchMap.get("location") != null){
             if(trackQuery >= 1) {
-                searchTermsStr += " and LOWER(location) LIKE LOWER('%" + searchMap.get("location").toString() + "%')";
+                searchTermsStr += " and LOWER(location) LIKE LOWER('%" + searchMap.get("location") + "%')";
             }else{
-                searchTermsStr += " LOWER(location) LIKE LOWER('%" + searchMap.get("location").toString() + "%')";
+                searchTermsStr += " LOWER(location) LIKE LOWER('%" + searchMap.get("location") + "%')";
             }
         }
 
@@ -771,7 +727,6 @@ public class DBFunctionImpl implements DBFunction {
     // </editor-fold>
     //
     // <editor-fold default-state="collapsed" desc="deleteCompany(String id)">
-    @Override
     public Map<String, Object> deleteCompany(String id) {
         LinkedHashMap<String, Object> params = new LinkedHashMap<>();
 
@@ -801,44 +756,43 @@ public class DBFunctionImpl implements DBFunction {
     // </editor-fold>
     //
     // <editor-fold default-state="collapsed" desc="createCompany(Map<String, Object> entryParams)">
-    @Override
     public List<Map<String, Object>> createCompany(Map<String, Object> entryParams) {
         LinkedHashMap<String, Object> params = new LinkedHashMap<>();
 
-        params.put("company_address", entryParams.get("company_address").toString());
-        params.put("company_description", entryParams.get("company_description").toString());
-        params.put("company_email", entryParams.get("company_email").toString());
-        params.put("company_name", entryParams.get("company_name").toString());
+        params.put("company_address", entryParams.get("company_address"));
+        params.put("company_description", entryParams.get("company_description"));
+        params.put("company_email", entryParams.get("company_email"));
+        params.put("company_name", entryParams.get("company_name"));
 
-        params.put("password", entryParams.get("password").toString());
-        params.put("contact_person", entryParams.get("contact_person").toString());
+        params.put("password", entryParams.get("password"));
+        params.put("contact_person", entryParams.get("contact_person"));
         params.put("created_at", Timestamp.valueOf(LocalDateTime.now()));
         params.put("updated_at", Timestamp.valueOf(LocalDateTime.now()));
         params.put("published_at", Timestamp.valueOf(LocalDateTime.now()));
-        params.put("api_key", entryParams.get("api_key").toString());
-        params.put("api_password", entryParams.get("api_password").toString());
-//        params.put("api_access", entryParams.get("api_access").toString());
-        params.put("created_by", entryParams.getOrDefault("created_by", "0").toString());
-        params.put("updated_by", entryParams.getOrDefault("updated_by", "0").toString());
+        params.put("api_key", entryParams.get("api_key"));
+        params.put("api_password", entryParams.get("api_password"));
+//        params.put("api_access", entryParams.get("api_access"));
+        params.put("created_by", entryParams.getOrDefault("created_by", "0"));
+        params.put("updated_by", entryParams.getOrDefault("updated_by", "0"));
 
         if(entryParams.get("company_id") != null){
-            params.put("company_id", entryParams.get("company_id").toString());
+            params.put("company_id", entryParams.get("company_id"));
         }else{
-            String propertyId = UUID.randomUUID().toString();
+            String propertyId = Utility.generateRandomFromUUID();
 
             params.put("company_id", propertyId);
         }
 
         if(entryParams.get("status") != null){
             try {
-                params.put("status", Optional.of(CompanyStatus.getCompanyStatusType(entryParams.get("status").toString())).orElse(UserStatus.getUserStatusType("active")));
+                params.put("status", Optional.of(CompanyStatus.getCompanyStatusType(String.valueOf(entryParams.get("status"))))
+                        .orElse(Status.getStatusType("active")));
             } catch (Exception e) {
                 log.error(e.getMessage());
-                throw new RuntimeException(e);
             }
         }
 
-        params = cleanMap(params);
+        params = Utility.cleanMap(params);
 
         String sql;
         String table = "properties";
@@ -857,32 +811,31 @@ public class DBFunctionImpl implements DBFunction {
     // </editor-fold>
     //
     // <editor-fold default-state="collapsed" desc="updateCompany(Map<String, Object> entryParams)">
-    @Override
     public List<Map<String, Object>> updateCompany(Map<String, Object> entryParams) {
         LinkedHashMap<String, Object> params = new LinkedHashMap<>();
 
         if(entryParams.get("password") != null) {
-            params.put("password", entryParams.get("password").toString());
+            params.put("password", entryParams.get("password"));
         }
 
         if(entryParams.get("company_name") != null) {
-            params.put("company_name", entryParams.get("company_name").toString());
+            params.put("company_name", entryParams.get("company_name"));
         }
 
         if(entryParams.get("company_description") != null) {
-            params.put("company_description", entryParams.get("company_description").toString());
+            params.put("company_description", entryParams.get("company_description"));
         }
 
         if(entryParams.get("company_address") != null) {
-            params.put("company_address", entryParams.get("company_address").toString());
+            params.put("company_address", entryParams.get("company_address"));
         }
 
         if(entryParams.get("company_email") != null) {
-            params.put("company_email", entryParams.get("company_email").toString());
+            params.put("company_email", entryParams.get("company_email"));
         }
 
         if(entryParams.get("contact_person") != null) {
-            params.put("contact_person", entryParams.get("contact_person").toString());
+            params.put("contact_person", entryParams.get("contact_person"));
         }
 
         params.put("updated_at", Timestamp.valueOf(LocalDateTime.now()));
@@ -892,32 +845,30 @@ public class DBFunctionImpl implements DBFunction {
         }
 
         if(entryParams.get("api_password") != null){
-            params.put("api_password", entryParams.get("api_password").toString());
+            params.put("api_password", entryParams.get("api_password"));
         }
 
         if(entryParams.get("api_key") != null){
-            params.put("api_key", entryParams.get("api_key").toString());
+            params.put("api_key", entryParams.get("api_key"));
         }
 
-        params.put("updated_by", Integer.parseInt(entryParams.getOrDefault("updated_by", "0").toString()));
+        params.put("updated_by", Integer.parseInt(String.valueOf(entryParams.getOrDefault("updated_by", "0"))));
 
         if(entryParams.get("status") != null){
             try {
-                params.put("status", CompanyStatus.getCompanyStatusType(entryParams.get("status").toString()));
+                params.put("status", CompanyStatus.getCompanyStatusType(String.valueOf(entryParams.get("status"))));
             } catch (Exception e) {
                 log.error(e.getMessage());
-
-                throw new RuntimeException(e);
             }
         }
 
         if(entryParams.get("verified") != null){
-            params.put("verified", Boolean.parseBoolean(entryParams.getOrDefault("verified", false).toString()));
+            params.put("verified", Boolean.parseBoolean(String.valueOf(entryParams.getOrDefault("verified", false))));
         }
 
         params.put("updated_at", Timestamp.valueOf(LocalDateTime.now()));
 
-        params = cleanMap(params);
+        params = Utility.cleanMap(params);
 
         LinkedHashMap<String, Object> where_params = new LinkedHashMap<>();
 
@@ -925,7 +876,7 @@ public class DBFunctionImpl implements DBFunction {
         String table = "properties";
 
         if(entryParams.get("id") != null) {
-            where_params.put("id", Integer.parseInt(entryParams.get("id").toString()));
+            where_params.put("id", Integer.parseInt(String.valueOf(entryParams.get("id"))));
         }else{
             return null;
         }
@@ -945,7 +896,6 @@ public class DBFunctionImpl implements DBFunction {
     // </editor-fold>
     //
     // <editor-fold default-state="collapsed" desc="listAllCompanies(Map<String, Object> queryParams) ">
-    @Override
     public List<Map<String, Object>> listAllCompanies(Map<String, Object> queryParams) {
         LinkedHashMap<String, Object> where_param = new LinkedHashMap<>();
 
@@ -953,13 +903,13 @@ public class DBFunctionImpl implements DBFunction {
 
         int limit = 50;
 
-        where_param.put("status", UserStatus.valueOf(queryParams.getOrDefault("status", "ACTIVE").toString()));
+        where_param.put("status", Status.valueOf(String.valueOf(queryParams.getOrDefault("status", "ACTIVE"))));
         where_param.put("limit", limit);
 
         if(queryParams.get("page_number") == null){
             where_param.put("offset", 0);
         }else{
-            where_param.put("offset", (Integer.parseInt(queryParams.getOrDefault("page_number", "0").toString()) - 1)* limit);
+            where_param.put("offset", (Integer.parseInt(String.valueOf(queryParams.getOrDefault("page_number", "0"))) - 1) * limit);
         }
 
         List<Map<String, Object>> property = NamedBaseExecute(sql, null, where_param, new MapResultHandler());
@@ -967,12 +917,10 @@ public class DBFunctionImpl implements DBFunction {
         return !property.isEmpty() ? property : null;
     }
     // </editor-fold>
-    //
 
-    /*-------------------- PERMISSIONS -------------------------*/
+    /**-------------------- PERMISSIONS -------------------------*/
 
     // <editor-fold default-state="collapsed" desc="searchPermissionById(String id)">
-    @Override
     public Map<String, Object> searchPermissionById(String id) {
         LinkedHashMap<String, Object> param = new LinkedHashMap<>();
         String sql = "SELECT * FROM permissions WHERE id=:id LIMIT 1";
@@ -986,7 +934,6 @@ public class DBFunctionImpl implements DBFunction {
     // </editor-fold>
     //
     // <editor-fold default-state="collapsed" desc="deletePermission(String id)">
-    @Override
     public Map<String, Object> deletePermission(String id) {
         LinkedHashMap<String, Object> params = new LinkedHashMap<>();
 
@@ -995,14 +942,12 @@ public class DBFunctionImpl implements DBFunction {
 
         try {
             if(params.get("status") != null){
-                params.put("status", Role_PermissionStatus.getRole_PermissionStatusType(params.get("status").toString()));
+                params.put("status", Role_PermissionStatus.getRole_PermissionStatusType(String.valueOf(params.get("status"))));
             }else{
                 params.put("status", Role_PermissionStatus.getRole_PermissionStatusType("delete"));
             }
         } catch (Exception e) {
             log.error(e.getMessage());
-
-            throw new RuntimeException(e);
         }
 
         LinkedHashMap<String, Object> where_params = new LinkedHashMap<>();
@@ -1028,22 +973,21 @@ public class DBFunctionImpl implements DBFunction {
     // </editor-fold>
     //
     // <editor-fold default-state="collapsed" desc="createPermission(Map<String, Object> entryParams)">
-    @Override
     public List<Map<String, Object>> createPermission(Map<String, Object> entryParams) {
         LinkedHashMap<String, Object> params = new LinkedHashMap<>();
 
-        params.put("action", entryParams.get("action").toString().toUpperCase());
+        params.put("action", String.valueOf(entryParams.get("action")).toUpperCase());
         if (entryParams.get("description") != null) {
-            params.put("description", entryParams.get("description").toString());
+            params.put("description", entryParams.get("description"));
         } else {
-            params.put("description", entryParams.get("action").toString().toLowerCase());
+            params.put("description", String.valueOf(entryParams.get("action")).toLowerCase());
         }
         params.put("created_at", Timestamp.valueOf(LocalDateTime.now()));
         params.put("updated_at", Timestamp.valueOf(LocalDateTime.now()));
-        params.put("created_by", entryParams.getOrDefault("created_by", "0").toString());
-        params.put("updated_by", entryParams.getOrDefault("updated_by", "0").toString());
+        params.put("created_by", entryParams.getOrDefault("created_by", "0"));
+        params.put("updated_by", entryParams.getOrDefault("updated_by", "0"));
 
-        params = cleanMap(params);
+        params = Utility.cleanMap(params);
 
         String sql;
         String table = "permissions";
@@ -1062,18 +1006,17 @@ public class DBFunctionImpl implements DBFunction {
     // </editor-fold>
     //
     // <editor-fold default-state="collapsed" desc="updatePermission(Map<String, Object> entryParams)">
-    @Override
     public List<Map<String, Object>> updatePermission(Map<String, Object> entryParams) {
         LinkedHashMap<String, Object> params = new LinkedHashMap<>();
 
         if(entryParams.get("description") != null) {
-            params.put("description", entryParams.get("description").toString());
+            params.put("description", entryParams.get("description"));
         }
 
         params.put("updated_at", Timestamp.valueOf(LocalDateTime.now()));
-        params.put("updated_by", entryParams.getOrDefault("updated_by", "0").toString());
+        params.put("updated_by", entryParams.getOrDefault("updated_by", "0"));
 
-        params = cleanMap(params);
+        params = Utility.cleanMap(params);
 
         LinkedHashMap<String, Object> where_params = new LinkedHashMap<>();
 
@@ -1081,7 +1024,7 @@ public class DBFunctionImpl implements DBFunction {
         String table = "permissions";
 
         if(entryParams.get("id") != null) {
-            where_params.put("id", Integer.parseInt(entryParams.get("id").toString()));
+            where_params.put("id", Integer.parseInt(String.valueOf(entryParams.get("id"))));
         }else{
             return null;
         }
@@ -1102,7 +1045,6 @@ public class DBFunctionImpl implements DBFunction {
     // </editor-fold>
     //
     // <editor-fold default-state="collapsed" desc="listAllPermissions(Map<String, Object> queryParams) ">
-    @Override
     public List<Map<String, Object>> listAllPermissions(Map<String, Object> queryParams) {
         LinkedHashMap<String, Object> param = new LinkedHashMap<>();
 
@@ -1110,14 +1052,13 @@ public class DBFunctionImpl implements DBFunction {
         String sql = "SELECT * FROM permissions WHERE LOWER(status)=LOWER(:status) ORDER BY id, created_at ASC LIMIT " + limit + " OFFSET :offset";
 
         try {
-//            param.put("limit", limit);
-            param.put("status", Role_PermissionStatus.getRole_PermissionStatusType(queryParams.getOrDefault("status",
-                    Role_PermissionStatus.ACTIVE.name()).toString()));
+            param.put("status", Role_PermissionStatus.getRole_PermissionStatusType(String.valueOf(queryParams.getOrDefault("status",
+                    Role_PermissionStatus.ACTIVE.name()))));
 
             if(queryParams.get("page_number") == null){
                 param.put("offset", 0);
             }else{
-                param.put("offset", (Integer.parseInt(queryParams.getOrDefault("page_number", "0").toString()) - 1) * Integer.parseInt(limit));
+                param.put("offset", (Integer.parseInt(String.valueOf(queryParams.getOrDefault("page_number", "0"))) - 1) * Integer.parseInt(limit));
             }
 
             log.error("param: " + param);
@@ -1127,16 +1068,15 @@ public class DBFunctionImpl implements DBFunction {
             return !property.isEmpty() ? property : null;
         } catch (Exception e) {
             log.error(e.getMessage());
-            throw new RuntimeException(e);
         }
+
+        return null;
     }
     // </editor-fold>
-    //
 
-    /*-------------------- ROLES -------------------------*/
+    /**-------------------- ROLES -------------------------*/
 
     // <editor-fold default-state="collapsed" desc="searchRoleById(String id)">
-    @Override
     public Map<String, Object> searchRoleById(String id) {
         LinkedHashMap<String, Object> param = new LinkedHashMap<>();
         String sql = "SELECT * FROM roles WHERE id=:id LIMIT 1";
@@ -1151,7 +1091,6 @@ public class DBFunctionImpl implements DBFunction {
     // </editor-fold>
     //
     // <editor-fold default-state="collapsed" desc="deleteRole(String id)">
-    @Override
     public Map<String, Object> deleteRole(String id) {
         LinkedHashMap<String, Object> params = new LinkedHashMap<>();
 
@@ -1160,14 +1099,12 @@ public class DBFunctionImpl implements DBFunction {
 
         try {
             if(params.get("status") != null){
-                params.put("status", Role_PermissionStatus.getRole_PermissionStatusType(params.get("status").toString()));
+                params.put("status", Role_PermissionStatus.getRole_PermissionStatusType(String.valueOf(params.get("status"))));
             }else{
                 params.put("status", Role_PermissionStatus.getRole_PermissionStatusType("delete"));
             }
         } catch (Exception e) {
             log.error(e.getMessage());
-
-            throw new RuntimeException(e);
         }
 
         LinkedHashMap<String, Object> where_params = new LinkedHashMap<>();
@@ -1193,46 +1130,45 @@ public class DBFunctionImpl implements DBFunction {
     // </editor-fold>
     //
     // <editor-fold default-state="collapsed" desc="createRole(Map<String, Object> entryParams)">
-    @Override
     public Map<String, Object> createRole(Map<String, Object> entryParams) {
         LinkedHashMap<String, Object> params = new LinkedHashMap<>();
         String roleIdNum;
 
-        params.put("name", entryParams.get("name").toString().toUpperCase());
+        params.put("name", String.valueOf(entryParams.get("name")).toUpperCase());
 
         if(entryParams.get("description") != null){
-            params.put("description", entryParams.get("description").toString());
+            params.put("description", entryParams.get("description"));
         }else {
-            params.put("description", entryParams.get("name").toString().toLowerCase());
+            params.put("description", String.valueOf(entryParams.get("name")).toLowerCase());
         }
 
         if(entryParams.get("role_id") != null){
-            roleIdNum = entryParams.get("role_id").toString();
+            roleIdNum = String.valueOf(entryParams.get("role_id"));
 
             params.put("role_id", roleIdNum);
         }else {
-            roleIdNum = UUID.randomUUID().toString();
+            roleIdNum = Utility.generateRandomFromUUID();
 
             params.put("role_id", roleIdNum);
         }
 
         if(entryParams.get("type") != null){
-            params.put("type", entryParams.get("type").toString());
+            params.put("type", entryParams.get("type"));
         }else {
             params.put("type", null);
         }
 
         params.put("created_at", Timestamp.valueOf(LocalDateTime.now()));
         params.put("updated_at", Timestamp.valueOf(LocalDateTime.now()));
-        params.put("created_by", entryParams.getOrDefault("created_by", "0").toString());
-        params.put("updated_by", entryParams.getOrDefault("updated_by", "0").toString());
+        params.put("created_by", entryParams.getOrDefault("created_by", "0"));
+        params.put("updated_by", entryParams.getOrDefault("updated_by", "0"));
 
         List<Object> permissionList = mapper.convertValue(entryParams.get("permissions"), new TypeReference<>() {});
 
         try {
             numOfOperations = 0;
 
-            params = cleanMap(params);
+            params = Utility.cleanMap(params);
 
             String sql;
             String table = "roles";
@@ -1272,7 +1208,6 @@ public class DBFunctionImpl implements DBFunction {
             }
         } catch (Exception e) {
             log.error(e.getMessage());
-            throw new RuntimeException(e);
         }
 
         return null;
@@ -1287,7 +1222,7 @@ public class DBFunctionImpl implements DBFunction {
         param.put("role_id", roleId);
 
         List<Map<String, Object>> permissions = NamedBaseExecute(sql, param, null, new MapResultHandler());
-        List<String> permissionsArr = permissions.stream().map(s -> s.get("permission_id").toString()).toList();
+        List<String> permissionsArr = permissions.stream().map(s -> String.valueOf(s.get("permission_id"))).toList();
 
         return !permissions.isEmpty() ? mapper.convertValue(permissionsArr, new TypeReference<>() {}) : null;
     }
@@ -1297,7 +1232,7 @@ public class DBFunctionImpl implements DBFunction {
     public int updatePermissions(Map<String, Object> entryParams) {
         numOfOperations = 0;
         List<Object> permissionList = mapper.convertValue(entryParams.get("permissions"), new TypeReference<>() {});
-        List<Object> allAssignedPermissions = findAllPermissionsAssignedToRole(entryParams.get("role_id").toString());
+        List<Object> allAssignedPermissions = findAllPermissionsAssignedToRole(String.valueOf(entryParams.get("role_id")));
 
         List<Object> orderedPermissionList =  permissionList.stream().sorted().toList();
         List<Object> allAssignedPermissionsOrdered = allAssignedPermissions.stream().sorted().toList(); // Arrays.asList("1", "2", "3", "4");
@@ -1319,7 +1254,6 @@ public class DBFunctionImpl implements DBFunction {
             }
 
             // TODO: Bug resulting from Jodd using executeQuery which sometimes does not return results as expected - can be replaced with executeUpdate in place
-
             if (unlikeElements != null && !unlikeElements.isEmpty()) {
                 // Update Role-Permission tbl
                 while (numOfOperations < unlikeElements.size()) {
@@ -1331,15 +1265,15 @@ public class DBFunctionImpl implements DBFunction {
 
                         if (addNewPermission && !stripePermission) {
                             rolePermissionLink_params.put("permission_id", Integer.parseInt(String.valueOf(permission)));
-                            rolePermissionLink_params.put("role_id", entryParams.get("role_id").toString());
+                            rolePermissionLink_params.put("role_id", entryParams.get("role_id"));
 
                             rolePermissionLink_sql = Models.InsertString(table2, rolePermissionLink_params);
                             rolePermissionLink_sql += " returning *";
                         }
 
                         if(stripePermission && !addNewPermission){
-                            rolePermissionLink_params.put("permission_id", Integer.parseInt(permission.toString()));
-                            rolePermissionLink_params.put("role_id", entryParams.get("role_id").toString());
+                            rolePermissionLink_params.put("permission_id", Integer.parseInt(String.valueOf(permission)));
+                            rolePermissionLink_params.put("role_id", entryParams.get("role_id"));
 
                             rolePermissionLink_sql = "DELETE FROM permissions_role_links WHERE permission_id=:permission_id AND role_id=:role_id returning *";
                         }
@@ -1368,7 +1302,6 @@ public class DBFunctionImpl implements DBFunction {
         return numOfOperations;
     }
 
-    @Override
     public Map<String, Object> updateRole(Map<String, Object> entryParams){
         int updatePermissionsStatus = updatePermissions(entryParams);
 
@@ -1381,22 +1314,22 @@ public class DBFunctionImpl implements DBFunction {
             LinkedHashMap<String, Object> roleParams = new LinkedHashMap<>();
 
             if(entryParams.get("description") != null) {
-                roleParams.put("description", entryParams.get("description").toString());
+                roleParams.put("description", entryParams.get("description"));
             }
 
             if(entryParams.get("type") != null) {
-                roleParams.put("type", entryParams.get("type").toString());
+                roleParams.put("type", entryParams.get("type"));
             }
 
             roleParams.put("updated_at", Timestamp.valueOf(LocalDateTime.now()));
-            roleParams.put("updated_by", entryParams.getOrDefault("updated_by", "0").toString());
+            roleParams.put("updated_by", entryParams.getOrDefault("updated_by", "0"));
 
-            roleParams = cleanMap(roleParams);
+            roleParams = Utility.cleanMap(roleParams);
 
             LinkedHashMap<String, Object> where_params = new LinkedHashMap<>();
 
             if(entryParams.get("id") != null) {
-                where_params.put("id", Integer.parseInt(entryParams.get("id").toString()));
+                where_params.put("id", Integer.parseInt(String.valueOf(entryParams.get("id"))));
             }else{
                 return null;
             }
@@ -1416,7 +1349,6 @@ public class DBFunctionImpl implements DBFunction {
     // </editor-fold>
     //
     // <editor-fold default-state="collapsed" desc="listAllRoles(Map<String, Object> queryParams) ">
-    @Override
     public List<Map<String, Object>> listAllRoles(Map<String, Object> queryParams) {
         LinkedHashMap<String, Object> param = new LinkedHashMap<>();
 
@@ -1426,13 +1358,13 @@ public class DBFunctionImpl implements DBFunction {
 
         try {
 //            param.put("limit", limit);
-            param.put("status", Role_PermissionStatus.getRole_PermissionStatusType(queryParams.getOrDefault("status",
-                    Role_PermissionStatus.ACTIVE.name()).toString()));
+            param.put("status", Role_PermissionStatus.getRole_PermissionStatusType(String.valueOf(queryParams.getOrDefault("status",
+                    Role_PermissionStatus.ACTIVE.name()))));
 
             if(queryParams.get("page_number") == null){
                 param.put("offset", 0);
             }else{
-                param.put("offset", (Integer.parseInt(queryParams.getOrDefault("page_number", "0").toString()) - 1) * Integer.parseInt(limit));
+                param.put("offset", (Integer.parseInt(String.valueOf(queryParams.getOrDefault("page_number", "0"))) - 1) * Integer.parseInt(limit));
             }
 
             log.error("param: " + param);
@@ -1442,9 +1374,9 @@ public class DBFunctionImpl implements DBFunction {
             return !property.isEmpty() ? property : null;
         } catch (Exception e) {
             log.error(e.getMessage());
-            throw new RuntimeException(e);
         }
+
+        return null;
     }
     // </editor-fold>
-    //
 }

@@ -4,6 +4,8 @@ server:
   port: ${API_ENV_PORT:8200}
   error:
     path: /error
+  servlet:
+    context-path: ${CONTEXT_PATH:/rentisha/api/v1}
 management:
   security:
     enabled: false

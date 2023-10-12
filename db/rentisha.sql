@@ -78,26 +78,6 @@ CREATE TABLE permissions (
 	CONSTRAINT permissions_pkey PRIMARY KEY (id)
 );
 
--- public.permissions_role_links definition
-
--- Drop table
-
--- DROP TABLE permissions_role_links;
-
-CREATE TABLE permissions_role_links (
-	id serial4 NOT NULL,
-	permission_id int4 NULL,
-	role_id varchar NULL,
-	CONSTRAINT permissions_role_links_pkey PRIMARY KEY (id),
-	CONSTRAINT permissions_role_links_unique UNIQUE (permission_id, role_id)
-);
-
-
--- public.permissions_role_links foreign keys
-
-ALTER TABLE public.permissions_role_links ADD CONSTRAINT permissions_role_links_permissionid_fk FOREIGN KEY (permission_id) REFERENCES permissions(id);
-ALTER TABLE public.permissions_role_links ADD CONSTRAINT permissions_role_links_roleid_fk FOREIGN KEY (role_id) REFERENCES roles(role_id);
-
 
 -- public.promotions definition
 
@@ -148,6 +128,7 @@ CREATE TABLE properties (
 	longitude varchar(255) NULL,
 	property_price varchar(255) NULL,
 	property_type varchar(255) NULL,
+	property_amenities varchar NULL,
 	minimum_price varchar(255) NULL,
 	maximum_price varchar(255) NULL,
 	CONSTRAINT properties_pkey PRIMARY KEY (id),
@@ -166,6 +147,7 @@ CREATE TABLE roles (
 	"name" varchar(255) NOT NULL,
 	description varchar(255) NULL,
 	"type" varchar(255) NULL,
+	permissions varchar NOT NULL,
 	created_at timestamp NOT NULL DEFAULT now(),
 	updated_at timestamp NOT NULL DEFAULT now(),
 	created_by varchar(255) NULL,

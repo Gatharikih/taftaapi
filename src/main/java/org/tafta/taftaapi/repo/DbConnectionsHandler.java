@@ -16,7 +16,7 @@ import java.sql.Connection;
 @Component
 public class DbConnectionsHandler {
     @Autowired
-    private DataSource dataSource;
+    DataSource dataSource;
 
     public synchronized Connection getConnection() {
         try {
@@ -31,7 +31,7 @@ public class DbConnectionsHandler {
      */
     public void destroyAllConnections(){
         log.info("*******************************************************************");
-        log.info("*********** Destruction of All Db Connection **********************");
+        log.info("*********** DESTRUCTION OF ALL DB CONNECTION **********************");
 
         dataSource.setPoolProperties(null);
         dataSource.close(true);

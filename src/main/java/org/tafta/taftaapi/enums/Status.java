@@ -5,22 +5,22 @@ package org.tafta.taftaapi.enums;
  * Created on May 15, 2023.
  * Time 1709h
  */
-public enum UserStatus {
+public enum Status {
     ACTIVE, INACTIVE, DELETED, SUSPENDED;
 
-    public static String getUserStatusType(String type) throws Exception {
+    public static String getStatusType(String type) {
         String statusType;
 
         if(type.equalsIgnoreCase("active")){
-            statusType = UserStatus.ACTIVE.name();
+            statusType = Status.ACTIVE.name();
         }else if(type.equalsIgnoreCase("in-active") || type.equalsIgnoreCase("inactive")){
-            statusType = UserStatus.INACTIVE.name();
+            statusType = Status.INACTIVE.name();
         }else if(type.equalsIgnoreCase("deleted") || type.equalsIgnoreCase("delete")){
-            statusType = UserStatus.DELETED.name();
+            statusType = Status.DELETED.name();
         }else if(type.equalsIgnoreCase("suspended") || type.equalsIgnoreCase("suspend")){
-            statusType = UserStatus.SUSPENDED.name();
+            statusType = Status.SUSPENDED.name();
         }else{
-            throw new Exception("Unrecognized status");
+            statusType = null;
         }
 
         return statusType;

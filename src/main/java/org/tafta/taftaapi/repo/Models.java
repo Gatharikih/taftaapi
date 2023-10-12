@@ -14,13 +14,12 @@ import java.util.regex.Pattern;
 public class Models {
     public static String InsertString(String table, Map<String, Object> collection) {
         String sql = "";
-        List<String> unsetKeys = new ArrayList<>();
 
-        if (collection.size() > 0) {
-            StringBuilder keys = new StringBuilder();
-            StringBuilder values = new StringBuilder();
+        if (!collection.isEmpty()) {
+            StringBuilder keys = new StringBuilder(), values = new StringBuilder();
 
             for (Map.Entry<String, Object> pair : collection.entrySet()) {
+
                 keys.append(pair.getKey()).append(",");
                 values.append(":").append(pair.getKey()).append(",");
             }
@@ -28,29 +27,25 @@ public class Models {
             keys = new StringBuilder(keys.substring(0, keys.length() - 1));
             values = new StringBuilder(values.substring(0, values.length() - 1));
 
-            sql = String.format("insert into %s (%s) values(%s)", table, keys, values);
-        }
-
-        for (String key : unsetKeys) {
-            collection.remove(key);
+            sql = String.format("INSERT into %s (%s) VALUES(%s)", table, keys, values);
         }
 
         return sql;
     }
 
-    public static String UpdateString(String table, Map<String, Object> collection, Map<String, Object> whereCollection) {
+    public static String UpdateString(String table, Map<String, Object> collection,
+                                      Map<String, Object> whereCollection) {
         StringBuilder sql = new StringBuilder();
         List<String> unsetKeys = new ArrayList<>();
 
-        if (collection.size() > 0) {
-            String keys;
-            String values;
-
-            sql = new StringBuilder(String.format("update %s set ", table));
+        if (!collection.isEmpty()) {
+            String keys, values;
+            sql = new StringBuilder(String.format("UPDATE %s SET ", table));
 
             for (Map.Entry<String, Object> pair : collection.entrySet()) {
                 if (pair.getValue() == null) {
                     unsetKeys.add(pair.getKey());
+
                     continue;
                 }
 
@@ -61,11 +56,12 @@ public class Models {
             }
 
             sql = new StringBuilder(sql.substring(0, sql.length() - 1));
-            sql.append(" where ");
+
+            sql.append(" WHERE ");
 
             for (Map.Entry<String, Object> pair : whereCollection.entrySet()) {
                 keys = pair.getKey().replaceAll("_1", "") + "=";
-                values = ":" + pair.getKey() + " and ";
+                values = ":" + pair.getKey() + " AND ";
 
                 sql.append(keys).append(values);
             }
@@ -76,78 +72,6 @@ public class Models {
         for (String key : unsetKeys) {
             collection.remove(key);
         }
-
-        return sql.toString();
-    }
-
-    public static String Likes(Map<String, Object> filtersCollection) {
-        StringBuilder sql = new StringBuilder(" ");
-        String keys;
-        String values;
-
-        for (Map.Entry<String, Object> pair : filtersCollection.entrySet()) {
-            int point = pair.getKey().indexOf("_1");
-
-            String key = point > 0 ? pair.getKey().substring(0, point) : pair.getKey();
-
-            keys = key + " ilike ";
-            values = ":" + key + " or ";
-
-            sql.append(keys).append(values);
-        }
-
-        sql = new StringBuilder(sql.substring(0, sql.length() - 4));
-
-        return sql.toString();
-    }
-
-    public static String Equals(Map<String, Object> filtersCollection) {
-        return Equals(filtersCollection,"and","=");
-    }
-
-    public static String Equals(Map<String, Object> filtersCollection,String joiner) {
-        return Equals(filtersCollection,joiner,"=");
-    }
-
-    public static String Equals(Map<String, Object> filtersCollection, String joiner, String comparator) {
-        StringBuilder sql = new StringBuilder(" ");
-        String keys;
-        String values;
-
-        if (joiner.isEmpty()) {
-            joiner = "and";
-        }
-
-        if (comparator.isEmpty()) {
-            comparator = "=";
-        }
-
-        joiner = " " + joiner + " ";
-
-        String patternStr = "_[1-9]+";
-        Pattern pattern = Pattern.compile(patternStr);
-
-        for (Map.Entry<String, Object> pair : filtersCollection.entrySet()) {
-
-            Matcher matcher = pattern.matcher(pair.getKey());
-
-            int point = 0;
-
-            if(matcher.find()){
-                point = matcher.start();//this will give you index
-            }
-
-            //int point = pair.getKey().indexOf("_1");
-
-            String key = point > 0 ? pair.getKey().substring(0, point) : pair.getKey();
-
-            keys = key + " " + comparator;
-            values = ":" + pair.getKey() + " " + joiner;
-
-            sql.append(keys).append(values);
-        }
-
-        sql = new StringBuilder(sql.substring(0, sql.length() - (joiner.length() + 1)));
 
         return sql.toString();
     }
