@@ -19,122 +19,133 @@ import java.util.Map;
 @Service
 public class PermissionService {
     @Autowired
-    private DBFunctionImpl dbFunction;
+    DBFunctionImpl dbFunction;
 
     public Map<String, Object> createPermission(Map<String, Object> permissionParams){
-        List<Map<String, Object>> createPermissionResponse = dbFunction.createPermission(permissionParams);
+        Map<String, Object> response = new HashMap<>();
 
-        if(createPermissionResponse != null && createPermissionResponse.size() > 0){
-            return new HashMap<>() {{
-                put("response_code", "201");
-                put("description", "Success");
-                put("data", createPermissionResponse);
-            }};
-        }else{
-            return new HashMap<>() {{
-                put("response_code", "200");
-                put("description", "Record not updated");
-                put("data", null);
-            }};
-        }
-    }
-    public Map<String, Object> updatePermission(Map<String, Object> permissionParams, String permissionId){
-        Map<String, Object> permissionResponse = dbFunction.searchPermissionById(permissionId);
+        try {
+            Map<String, Object> createPermissionResponse = dbFunction.createPermission(permissionParams);
 
-        if (permissionResponse != null) {
-            permissionParams.put("id", permissionId);
-
-            List<Map<String, Object>> updateCompanyResponse = dbFunction.updatePermission(permissionParams);
-
-            if(updateCompanyResponse != null){
-                if(updateCompanyResponse.size() > 0){
-                    return new HashMap<>() {{
-                        put("response_code", "201");
-                        put("description", "Success");
-                        put("data", updateCompanyResponse);
-                    }};
-                }else{
-                    return new HashMap<>() {{
-                        put("response_code", "400");
-                        put("description", "Unrecognized status");
-                        put("data", null);
-                    }};
-                }
+            if(createPermissionResponse != null){
+                response.put("response_code", "201");
+                response.put("response_description", "Success");
+                response.put("response_data", createPermissionResponse);
             }else{
-                return new HashMap<>() {{
-                    put("response_code", "200");
-                    put("description", "Record not updated");
-                    put("data", null);
-                }};
+                response.put("response_code", "200");
+                response.put("response_description", "Record not updated");
+                response.put("response_data", null);
             }
-        } else {
-            return new HashMap<>() {{
-                put("response_code", "404");
-                put("description", "Permission not found");
-                put("data", null);
-            }};
+        } catch (Exception e) {
+            log.error(e.getMessage());
+
+            response.put("response_code", "500");
+            response.put("response_description", "Internal Error");
+            response.put("response_data", null);
         }
+
+        return response;
     }
+
+    public Map<String, Object> updatePermission(Map<String, Object> permissionParams, String permissionId){
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            Map<String, Object> permissionResponse = dbFunction.searchPermissionById(permissionId);
+
+            if (permissionResponse != null) {
+                permissionParams.put("id", permissionResponse.getOrDefault("id", permissionId));
+
+                Map<String, Object> updateCompanyResponse = dbFunction.updatePermission(permissionParams);
+
+                if(updateCompanyResponse != null){
+                    if(!updateCompanyResponse.isEmpty()){
+                        response.put("response_code", "200");
+                        response.put("response_description", "Success");
+                        response.put("response_data", updateCompanyResponse);
+                    }else{
+                        response.put("response_code", "400");
+                        response.put("response_description", "Unrecognized status");
+                        response.put("response_data", null);
+                    }
+                }else{
+                    response.put("response_code", "200");
+                    response.put("response_description", "Record not updated");
+                    response.put("response_data", null);
+                }
+            } else {
+                response.put("response_code", "404");
+                response.put("response_description", "Permission not found");
+                response.put("response_data", null);
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage());
+
+            response.put("response_code", "500");
+            response.put("response_description", "Internal Error");
+            response.put("response_data", null);
+        }
+
+        return response;
+    }
+
     public Map<String, Object> listAllPermissions(Map<String, Object> queryParams){
+        Map<String, Object> response = new HashMap<>();
         List<Map<String, Object>> listAllPermissionsResponse = dbFunction.listAllPermissions(queryParams);
 
         if(listAllPermissionsResponse != null){
-            return new HashMap<>() {{
-                put("response_code", "200");
-                put("description", "Success");
-                put("data", listAllPermissionsResponse);
-                put("page_size", listAllPermissionsResponse.size());
-            }};
+            response.put("response_code", "200");
+            response.put("response_description", "Success");
+            response.put("response_data", listAllPermissionsResponse);
+            response.put("page_size", listAllPermissionsResponse.size());
         }else{
-            return new HashMap<>() {{
-                put("response_code", "404");
-                put("description", "No permission found");
-                put("data", null);
-            }};
+            response.put("response_code", "404");
+            response.put("response_description", "No permission found");
+            response.put("response_data", null);
         }
+
+        return response;
     }
+
     public Map<String, Object> searchPermissionById(String id){
+        Map<String, Object> response = new HashMap<>();
         Map<String, Object> searchPermissionResponse = dbFunction.searchPermissionById(id);
 
         if(searchPermissionResponse != null){
-            return new HashMap<>() {{
-                put("response_code", "200");
-                put("description", "Success");
-                put("data", searchPermissionResponse);
-            }};
+            response.put("response_code", "200");
+            response.put("response_description", "Success");
+            response.put("response_data", searchPermissionResponse);
         }else{
-            return new HashMap<>() {{
-                put("response_code", "404");
-                put("description", "No permission found");
-                put("data", null);
-            }};
+            response.put("response_code", "404");
+            response.put("response_description", "No permission found");
+            response.put("response_data", null);
         }
+
+        return response;
     }
+
     public Map<String, Object> deletePermission(String id){
+        Map<String, Object> response = new HashMap<>();
         Map<String, Object> searchPermissionResponse = dbFunction.searchPermissionById(id);
 
         if(searchPermissionResponse != null){
             Map<String, Object> deletePermissionResponse = dbFunction.deletePermission(id);
 
             if(deletePermissionResponse != null){
-                return new HashMap<>() {{
-                    put("response_code", "200");
-                    put("description", "Success");
-                    put("data", null);
-                }};
+                response.put("response_code", "200");
+                response.put("response_description", "Success");
+                response.put("response_data", deletePermissionResponse.get("id"));
             }else{
-                return new HashMap<>() {{
-                    put("response_code", "200");
-                    put("description", "Permission not deleted");
-                    put("data", null);
-                }};
+                response.put("response_code", "200");
+                response.put("response_description", "Permission not deleted");
+                response.put("response_data", null);
             }
         }else{
-            return new HashMap<>() {{
-                put("response_code", "200");
-                put("description", "Permission not found");
-                put("data", null);
-            }};
+            response.put("response_code", "200");
+            response.put("response_description", "Permission not found");
+            response.put("response_data", null);
         }
+
+        return response;
     }
 }

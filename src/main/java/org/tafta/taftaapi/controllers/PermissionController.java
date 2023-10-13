@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import org.tafta.taftaapi.services.CompanyService;
 import org.tafta.taftaapi.services.DataValidation;
 import org.tafta.taftaapi.services.PermissionService;
+import org.tafta.taftaapi.utility.Utility;
 
 import java.util.*;
 
@@ -22,88 +23,92 @@ public class PermissionController {
     @Autowired
     PermissionService permissionService;
     @Autowired
-    private DataValidation dataValidation;
+    DataValidation dataValidation;
 
-    @RequestMapping(value ="/api/v1/permissions/permission/{permission_id}", method = RequestMethod.GET)
+    @RequestMapping(value ="/permissions/{permission_id}", method = RequestMethod.GET)
     public ResponseEntity<Object> getPermission(@PathVariable("permission_id") String permissionId) {
+        Map<String, Object> searchPermissionResponse = new HashMap<>();
+
         try {
             if (!permissionId.trim().isEmpty()) {
-                Map<String, Object> searchPermissionResponse = permissionService.searchPermissionById(permissionId.trim());
-
-                return ResponseEntity.status(Integer.parseInt(searchPermissionResponse.get("response_code").toString())).body(searchPermissionResponse);
+                searchPermissionResponse = permissionService.searchPermissionById(permissionId.trim());
             } else {
-                return ResponseEntity.status(404).body(new HashMap<>() {{
-                    put("response_code", "404");
-                    put("description", "Success");
-                    put("data", null);
-                }});
+                searchPermissionResponse.put("response_code", "404");
+                searchPermissionResponse.put("response_description", "Success");
+                searchPermissionResponse.put("response_data", null);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
 
-            return ResponseEntity.status(500).body(new HashMap<>() {{
-                put("response_code", "500");
-                put("description", "Internal error occurred");
-                put("data", null);
-            }});
+            searchPermissionResponse.put("response_code", "500");
+            searchPermissionResponse.put("response_description", "Internal error occurred");
+            searchPermissionResponse.put("response_data", null);
         }
+
+        return ResponseEntity
+                .status(Integer.parseInt(String.valueOf(searchPermissionResponse.get("response_code"))))
+                .body(searchPermissionResponse);
     }
 
-    @RequestMapping(value ="/api/v1/permissions/list", method = RequestMethod.GET)
-    public ResponseEntity<Object> listAllPermissions(@RequestParam("page_number") Optional<String> pageNumber, @RequestParam("status") Optional<String> status) {
+    @RequestMapping(value ="/permissions/list", method = RequestMethod.GET)
+    public ResponseEntity<Object> listAllPermissions(@RequestParam(value = "page_number", required = false) String pageNumber,
+                                                     @RequestParam(value = "status", required = false) String status) {
+        Map<String, Object> listAllPermissionsResponse = new HashMap<>();
+
         try {
-            Map<String, Object> searchMap = new HashMap<>();
+            Map<String, Object> searchMap = new HashMap<>(){{
+                put("page_number", pageNumber);
+                put("status", status);
+            }};
 
-            pageNumber.ifPresent(s -> searchMap.put("page_number", s));
-            status.ifPresent(s -> searchMap.put("status", s));
+            searchMap = Utility.cleanMap(searchMap);
 
-            Map<String, Object> listAllPermissionsResponse = permissionService.listAllPermissions(searchMap);
-
-            return ResponseEntity.status(Integer.parseInt(listAllPermissionsResponse.get("response_code").toString())).body(listAllPermissionsResponse);
+            listAllPermissionsResponse = permissionService.listAllPermissions(searchMap);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
 
-            return ResponseEntity.status(500).body(new HashMap<>() {{
-                put("response_code", "500");
-                put("description", "Internal error occurred");
-                put("data", null);
-            }});
+            listAllPermissionsResponse.put("response_code", "500");
+            listAllPermissionsResponse.put("response_description", "Internal error occurred");
+            listAllPermissionsResponse.put("response_data", null);
         }
+
+        return ResponseEntity
+                .status(Integer.parseInt(String.valueOf(listAllPermissionsResponse.get("response_code"))))
+                .body(listAllPermissionsResponse);
     }
 
-    @RequestMapping(value ="/api/v1/permissions/{permission_id}", method = RequestMethod.PUT)
-    public ResponseEntity<Object> updatePermission(@PathVariable("permission_id") String permissionId, @RequestBody Map<String, Object> body) {
-        Map<String, Object> response = new HashMap<>();
+    @RequestMapping(value ="/permissions/{permission_id}", method = RequestMethod.PUT)
+    public ResponseEntity<Object> updatePermission(@PathVariable("permission_id") String permissionId,
+                                                   @RequestBody Map<String, Object> body) {
+        Map<String, Object> updatePermissionResponse = new HashMap<>();
 
         try {
-            Map<String, Object> updatePermissionResponse = permissionService.updatePermission(body, permissionId);
+            body = Utility.cleanMap(body);
 
-            return ResponseEntity.status(Integer.parseInt(updatePermissionResponse.get("response_code").toString())).body(updatePermissionResponse);
+            updatePermissionResponse = permissionService.updatePermission(body, permissionId);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
 
-            if (e.getCause() != null || e.getCause().getMessage().contains("duplicate key") || e.getCause().getMessage().contains("unique constraint")){
-                response.put("response_code", "400");
-                response.put("description", "Failed");
-                response.put("errors", List.of(new HashMap<>() {{
-                    put("description", "Record already exists");
-                }}));
+            if (e.getCause() != null || e.getCause().getMessage().contains("duplicate key") ||
+                    e.getCause().getMessage().contains("unique constraint")){
+                updatePermissionResponse.put("response_code", "400");
+                updatePermissionResponse.put("response_description", "Failed");
+                updatePermissionResponse.put("errors", "Record already exists");
             }else {
-                response.put("response_code", "500");
-                response.put("description", "Failed");
-                response.put("errors", List.of(new HashMap<>() {{
-                    put("description", "Internal error occurred");
-                }}));
+                updatePermissionResponse.put("response_code", "500");
+                updatePermissionResponse.put("response_description", "Failed");
+                updatePermissionResponse.put("errors", "Internal error occurred");
             }
-
-            return ResponseEntity.status(Integer.parseInt(response.get("response_code").toString()))
-                    .body(response);
         }
+
+        return ResponseEntity
+                .status(Integer.parseInt(String.valueOf(updatePermissionResponse.get("response_code"))))
+                .body(updatePermissionResponse);
     }
 
-    @RequestMapping(value ="/api/v1/permissions", method = RequestMethod.POST)
+    @RequestMapping(value ="/permissions", method = RequestMethod.POST)
     public ResponseEntity<Object> createPermission(@RequestBody Map<String, Object> body) {
-        Map<String, Object> response = new HashMap<>();
+        Map<String, Object> createPermissionResponse = new HashMap<>();
 
         try {
             List<String> requiredFields = new ArrayList<>();
@@ -113,62 +118,57 @@ public class PermissionController {
             Map<String, Object> dataValidationResult = dataValidation.areFieldsValid(body, requiredFields);
 
             if (Boolean.parseBoolean(dataValidationResult.get("valid").toString())) {
-                Map<String, Object> createPermissionResponse = permissionService.createPermission(body);
-
-                return ResponseEntity.status(Integer.parseInt(createPermissionResponse.get("response_code").toString())).body(createPermissionResponse);
+                createPermissionResponse = permissionService.createPermission(body);
             } else {
-                Map validationErrorMap = (Map) dataValidationResult.get("errors");
-
-                response.put("response_code", "400");
-                response.put("description", "Failed");
-                response.put("errors", List.of(validationErrorMap.get("message")));
-
-                return ResponseEntity.status(400).body(response);
+                createPermissionResponse.put("response_code", "400");
+                createPermissionResponse.put("response_description", "Failed");
+                createPermissionResponse.put("errors", String.valueOf(dataValidationResult.get("errors")));
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
 
             if (e.getCause() != null || e.getCause().getMessage().contains("duplicate key") || e.getCause().getMessage().contains("unique constraint")){
-                response.put("response_code", "400");
-                response.put("description", "Failed");
-                response.put("errors", List.of(new HashMap<>() {{
-                    put("description", "Permission already exists");
+                createPermissionResponse.put("response_code", "400");
+                createPermissionResponse.put("response_description", "Failed");
+                createPermissionResponse.put("errors", List.of(new HashMap<>() {{
+                    put("response_description", "Permission already exists");
                 }}));
             }else {
-                response.put("response_code", "500");
-                response.put("description", "Failed");
-                response.put("errors", List.of(new HashMap<>() {{
-                    put("description", "Internal error occurred");
+                createPermissionResponse.put("response_code", "500");
+                createPermissionResponse.put("response_description", "Failed");
+                createPermissionResponse.put("errors", List.of(new HashMap<>() {{
+                    put("response_description", "Internal error occurred");
                 }}));
             }
-
-            return ResponseEntity.status(Integer.parseInt(response.get("response_code").toString()))
-                    .body(response);
         }
+
+        return ResponseEntity
+                .status(Integer.parseInt(String.valueOf(createPermissionResponse.get("response_code"))))
+                .body(createPermissionResponse);
     }
 
-    @RequestMapping(value ="/api/v1/permissions/{permission_id}", method = RequestMethod.DELETE)
+    @RequestMapping(value ="/permissions/{permission_id}", method = RequestMethod.DELETE)
     public ResponseEntity<Object> deletePermission(@PathVariable("permission_id") String permissionId) {
-        try {
-            if (!permissionId.trim().equalsIgnoreCase("")) {
-                Map<String, Object> deleteCompanyResponse = permissionService.deletePermission(permissionId.trim());
+        Map<String, Object> deleteCompanyResponse = new HashMap<>();
 
-                return ResponseEntity.status(Integer.parseInt(deleteCompanyResponse.get("response_code").toString())).body(deleteCompanyResponse);
+        try {
+            if (!permissionId.trim().isEmpty()) {
+                deleteCompanyResponse = permissionService.deletePermission(permissionId.trim());
             } else {
-                return ResponseEntity.status(404).body(new HashMap<>() {{
-                    put("response_code", "404");
-                    put("description", "Success");
-                    put("data", null);
-                }});
+                deleteCompanyResponse.put("response_code", "404");
+                deleteCompanyResponse.put("response_description", "Success");
+                deleteCompanyResponse.put("response_data", null);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
 
-            return ResponseEntity.status(500).body(new HashMap<>() {{
-                put("response_code", "500");
-                put("description", "Internal error occurred");
-                put("data", null);
-            }});
+            deleteCompanyResponse.put("response_code", "500");
+            deleteCompanyResponse.put("response_description", "Internal error occurred");
+            deleteCompanyResponse.put("response_data", null);
         }
+
+        return ResponseEntity
+                .status(Integer.parseInt(String.valueOf(deleteCompanyResponse.get("response_code"))))
+                .body(deleteCompanyResponse);
     }
 }
