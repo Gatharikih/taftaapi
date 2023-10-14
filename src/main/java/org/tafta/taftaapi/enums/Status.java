@@ -20,7 +20,7 @@ public enum Status {
         }else if(type.equalsIgnoreCase("suspended") || type.equalsIgnoreCase("suspend")){
             statusType = Status.SUSPENDED.name();
         }else{
-            statusType = null;
+            statusType = Status.ACTIVE.name();
         }
 
         return statusType;

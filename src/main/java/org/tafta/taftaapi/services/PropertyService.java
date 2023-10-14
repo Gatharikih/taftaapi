@@ -42,6 +42,12 @@ public class PropertyService {
             response.put("response_code", "500");
             response.put("response_description", "Internal Error");
             response.put("response_data", null);
+
+            if(e.getMessage() != null && (e.getMessage().contains("violates unique") || e.getMessage().contains("duplicate key"))){
+                response.put("response_code", "400");
+                response.put("description", "Property already exists");
+                response.put("data", null);
+            }
         }
 
         return response;

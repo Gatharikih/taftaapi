@@ -42,6 +42,12 @@ public class PermissionService {
             response.put("response_code", "500");
             response.put("response_description", "Internal Error");
             response.put("response_data", null);
+
+            if(e.getMessage() != null && (e.getMessage().contains("violates unique") || e.getMessage().contains("duplicate key"))){
+                response.put("response_code", "400");
+                response.put("description", "Permission action already exists");
+                response.put("data", null);
+            }
         }
 
         return response;
@@ -91,16 +97,25 @@ public class PermissionService {
 
     public Map<String, Object> listAllPermissions(Map<String, Object> queryParams){
         Map<String, Object> response = new HashMap<>();
-        List<Map<String, Object>> listAllPermissionsResponse = dbFunction.listAllPermissions(queryParams);
 
-        if(listAllPermissionsResponse != null){
-            response.put("response_code", "200");
-            response.put("response_description", "Success");
-            response.put("response_data", listAllPermissionsResponse);
-            response.put("page_size", listAllPermissionsResponse.size());
-        }else{
-            response.put("response_code", "404");
-            response.put("response_description", "No permission found");
+        try {
+            List<Map<String, Object>> listAllPermissionsResponse = dbFunction.listAllPermissions(queryParams);
+
+            if(listAllPermissionsResponse != null){
+                response.put("response_code", "200");
+                response.put("response_description", "Success");
+                response.put("response_data", listAllPermissionsResponse);
+                response.put("page_size", listAllPermissionsResponse.size());
+            }else{
+                response.put("response_code", "404");
+                response.put("response_description", "No permission found");
+                response.put("response_data", null);
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage());
+
+            response.put("response_code", "500");
+            response.put("response_description", "Internal Error");
             response.put("response_data", null);
         }
 
@@ -126,23 +141,32 @@ public class PermissionService {
 
     public Map<String, Object> deletePermission(String id){
         Map<String, Object> response = new HashMap<>();
-        Map<String, Object> searchPermissionResponse = dbFunction.searchPermissionById(id);
 
-        if(searchPermissionResponse != null){
-            Map<String, Object> deletePermissionResponse = dbFunction.deletePermission(id);
+        try {
+            Map<String, Object> searchPermissionResponse = dbFunction.searchPermissionById(id);
 
-            if(deletePermissionResponse != null){
-                response.put("response_code", "200");
-                response.put("response_description", "Success");
-                response.put("response_data", deletePermissionResponse.get("id"));
+            if(searchPermissionResponse != null){
+                Map<String, Object> deletePermissionResponse = dbFunction.deletePermission(id);
+
+                if(deletePermissionResponse != null){
+                    response.put("response_code", "200");
+                    response.put("response_description", "Success");
+                    response.put("response_data", deletePermissionResponse.get("id"));
+                }else{
+                    response.put("response_code", "200");
+                    response.put("response_description", "Permission not deleted");
+                    response.put("response_data", null);
+                }
             }else{
-                response.put("response_code", "200");
-                response.put("response_description", "Permission not deleted");
+                response.put("response_code", "404");
+                response.put("response_description", "Permission not found");
                 response.put("response_data", null);
             }
-        }else{
-            response.put("response_code", "200");
-            response.put("response_description", "Permission not found");
+        } catch (Exception e) {
+            log.error(e.getMessage());
+
+            response.put("response_code", "500");
+            response.put("response_description", "Internal Error");
             response.put("response_data", null);
         }
 

@@ -143,10 +143,8 @@ CREATE TABLE properties (
 
 CREATE TABLE roles (
 	id serial4 NOT NULL,
-	role_id varchar(255) NOT NULL,
 	"name" varchar(255) NOT NULL,
 	description varchar(255) NULL,
-	"type" varchar(255) NULL,
 	permissions varchar NOT NULL,
 	created_at timestamp NOT NULL DEFAULT now(),
 	updated_at timestamp NOT NULL DEFAULT now(),
@@ -155,8 +153,7 @@ CREATE TABLE roles (
 	status varchar(255) NOT NULL DEFAULT 'ACTIVE'::character varying,
 	deleted_at timestamp NULL,
 	CONSTRAINT roles_name_unique UNIQUE (name),
-	CONSTRAINT roles_pkey PRIMARY KEY (id),
-	CONSTRAINT role_id_unique UNIQUE (role_id)
+	CONSTRAINT roles_pkey PRIMARY KEY (id)
 );
 
 

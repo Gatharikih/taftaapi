@@ -19,115 +19,160 @@ import java.util.Map;
 @Service
 public class RoleService {
     @Autowired
-    private DBFunctionImpl dbFunction;
+    DBFunctionImpl dbFunction;
 
     public Map<String, Object> createRole(Map<String, Object> roleParams){
-        Map<String, Object> createRoleResponse = dbFunction.createRole(roleParams);
+        Map<String, Object> response = new HashMap<>();
 
-        if(createRoleResponse != null){
-            return new HashMap<>() {{
-                put("response_code", "201");
-                put("description", "Success");
-                put("data", createRoleResponse);
-            }};
-        }else{
-            return new HashMap<>() {{
-                put("response_code", "200");
-                put("description", "Record not updated");
-                put("data", null);
-            }};
+        try {
+            Map<String, Object> createRoleResponse = dbFunction.createRole(roleParams);
+
+            if(createRoleResponse != null){
+                response.put("response_code", "201");
+                response.put("description", "Success");
+                response.put("data", createRoleResponse);
+            }else{
+                response.put("response_code", "200");
+                response.put("description", "Record not created");
+                response.put("data", null);
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage());
+
+            response.put("response_code", "500");
+            response.put("description", "Internal error");
+            response.put("data", null);
+
+            if(e.getMessage() != null && (e.getMessage().contains("violates unique") || e.getMessage().contains("duplicate key"))){
+                response.put("response_code", "400");
+                response.put("description", "Role action already exists");
+                response.put("data", null);
+            }
         }
+
+        return response;
     }
     public Map<String, Object> updateRole(Map<String, Object> roleParams, String roleId){
-        Map<String, Object> roleResponse = dbFunction.searchRoleById(roleId);
+        Map<String, Object> response = new HashMap<>();
 
-        if (roleResponse != null) {
-            roleParams.put("id", roleId);
-            roleParams.put("role_id", roleResponse.get("role_id").toString());
+        try {
+            Map<String, Object> roleResponse = dbFunction.searchRoleById(roleId);
 
-            Map<String, Object> updateRoleResponse = dbFunction.updateRole(roleParams);
+            if (roleResponse != null) {
+                roleParams.put("id", roleId);
+                roleParams.put("role_id", roleResponse.get("role_id").toString());
 
-            if(updateRoleResponse != null){
-                return new HashMap<>() {{
-                    put("response_code", "201");
-                    put("description", "Success");
-                    put("data", null);
-                }};
-            }else{
-                return new HashMap<>() {{
-                    put("response_code", "200");
-                    put("description", "Record not updated");
-                    put("data", null);
-                }};
+                Map<String, Object> updateRoleResponse = dbFunction.updateRole(roleParams);
+
+                if(updateRoleResponse != null){
+                    response.put("response_code", "201");
+                    response.put("description", "Success");
+                    response.put("data", null);
+                }else{
+                    response.put("response_code", "200");
+                    response.put("description", "Record not updated");
+                    response.put("data", null);
+                }
+            } else {
+                response.put("response_code", "404");
+                response.put("description", "Role not found");
+                response.put("data", null);
             }
-        } else {
-            return new HashMap<>() {{
-                put("response_code", "404");
-                put("description", "Role not found");
-                put("data", null);
-            }};
+        } catch (Exception e) {
+            log.error(e.getMessage());
+
+            response.put("response_code", "500");
+            response.put("description", "Internal error");
+            response.put("data", null);
         }
+
+        return response;
     }
+
     public Map<String, Object> listAllRoles(Map<String, Object> queryParams){
-        List<Map<String, Object>> listAllRolesResponse = dbFunction.listAllRoles(queryParams);
+        Map<String, Object> response = new HashMap<>();
 
-        if(listAllRolesResponse != null){
-            return new HashMap<>() {{
-                put("response_code", "200");
-                put("description", "Success");
-                put("data", listAllRolesResponse);
-                put("page_size", listAllRolesResponse.size());
-            }};
-        }else{
-            return new HashMap<>() {{
-                put("response_code", "404");
-                put("description", "No role found");
-                put("data", null);
-            }};
-        }
-    }
-    public Map<String, Object> searchRoleById(String id){
-        Map<String, Object> searchRoleResponse = dbFunction.searchRoleById(id);
+        try {
+            List<Map<String, Object>> listAllRolesResponse = dbFunction.listAllRoles(queryParams);
 
-        if(searchRoleResponse != null){
-            return new HashMap<>() {{
-                put("response_code", "200");
-                put("description", "Success");
-                put("data", searchRoleResponse);
-            }};
-        }else{
-            return new HashMap<>() {{
-                put("response_code", "404");
-                put("description", "No role found");
-                put("data", null);
-            }};
-        }
-    }
-    public Map<String, Object> deleteRole(String id){
-        Map<String, Object> searchRoleResponse = dbFunction.searchRoleById(id);
-
-        if(searchRoleResponse != null){
-            Map<String, Object> deleteRoleResponse = dbFunction.deleteRole(id);
-
-            if(deleteRoleResponse != null){
-                return new HashMap<>() {{
-                    put("response_code", "200");
-                    put("description", "Success");
-                    put("data", null);
-                }};
+            if(listAllRolesResponse != null){
+                response.put("response_code", "200");
+                response.put("description", "Success");
+                response.put("data", listAllRolesResponse);
+                response.put("page_size", listAllRolesResponse.size());
             }else{
-                return new HashMap<>() {{
-                    put("response_code", "200");
-                    put("description", "Role not deleted");
-                    put("data", null);
-                }};
+                response.put("response_code", "404");
+                response.put("description", "No role found");
+                response.put("data", null);
             }
-        }else{
-            return new HashMap<>() {{
-                put("response_code", "200");
-                put("description", "Role not found");
-                put("data", null);
-            }};
+        } catch (Exception e) {
+            log.error(e.getMessage());
+
+            response.put("response_code", "500");
+            response.put("description", "Internal error");
+            response.put("data", null);
         }
+
+        return response;
+    }
+
+    public Map<String, Object> searchRoleById(String id){
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            Map<String, Object> searchRoleResponse = dbFunction.searchRoleById(id);
+
+            if(searchRoleResponse != null){
+                response.put("response_code", "200");
+                response.put("description", "Success");
+                response.put("data", searchRoleResponse);
+            }else{
+                response.put("response_code", "404");
+                response.put("description", "No role found");
+                response.put("data", null);
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage());
+
+            response.put("response_code", "500");
+            response.put("description", "Internal error");
+            response.put("data", null);
+        }
+
+        return response;
+    }
+
+    public Map<String, Object> deleteRole(String id){
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            Map<String, Object> searchRoleResponse = dbFunction.searchRoleById(id);
+
+            if(searchRoleResponse != null){
+                Map<String, Object> deleteRoleResponse = dbFunction.deleteRole(id);
+
+                if(deleteRoleResponse != null){
+                    response.put("response_code", "200");
+                    response.put("description", "Success");
+                    response.put("data", deleteRoleResponse.get("id"));
+                }else{
+                    response.put("response_code", "200");
+                    response.put("description", "Role not deleted");
+                    response.put("data", null);
+                }
+            }else{
+                response.put("response_code", "200");
+                response.put("description", "Role not found");
+                response.put("data", null);
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage());
+
+            response.put("response_code", "500");
+            response.put("description", "Internal error");
+            response.put("data", null);
+        }
+
+        return response;
     }
 }

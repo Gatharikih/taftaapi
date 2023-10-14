@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import org.tafta.taftaapi.services.DataValidation;
 import org.tafta.taftaapi.services.PermissionService;
 import org.tafta.taftaapi.services.RoleService;
+import org.tafta.taftaapi.utility.Utility;
 
 import java.util.*;
 
@@ -22,102 +23,98 @@ public class RoleController {
     @Autowired
     RoleService roleService;
     @Autowired
-    private DataValidation dataValidation;
+    DataValidation dataValidation;
 
-    @RequestMapping(value ="/api/v1/roles/role/{role_id}", method = RequestMethod.GET)
+    @RequestMapping(value ="/roles/{role_id}", method = RequestMethod.GET)
     public ResponseEntity<Object> getRole(@PathVariable("role_id") String roleId) {
+        Map<String, Object> searchRoleResponse = new HashMap<>();
+
         try {
             if (!roleId.trim().isEmpty()) {
-                Map<String, Object> searchRoleResponse = roleService.searchRoleById(roleId.trim());
-
-                return ResponseEntity.status(Integer.parseInt(searchRoleResponse.get("response_code").toString())).body(searchRoleResponse);
+                searchRoleResponse = roleService.searchRoleById(roleId.trim());
             } else {
-                return ResponseEntity.status(404).body(new HashMap<>() {{
-                    put("response_code", "404");
-                    put("description", "Success");
-                    put("data", null);
-                }});
+                searchRoleResponse.put("response_code", "404");
+                searchRoleResponse.put("response_description", "Success");
+                searchRoleResponse.put("data", null);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
 
-            return ResponseEntity.status(500).body(new HashMap<>() {{
-                put("response_code", "500");
-                put("description", "Internal error occurred");
-                put("data", null);
-            }});
+            searchRoleResponse.put("response_code", "500");
+            searchRoleResponse.put("response_description", "Internal error");
+            searchRoleResponse.put("data", null);
         }
+
+        return ResponseEntity
+                .status(Integer.parseInt(String.valueOf(searchRoleResponse.get("response_code"))))
+                .body(searchRoleResponse);
     }
 
-    @RequestMapping(value ="/api/v1/roles/list", method = RequestMethod.GET)
-    public ResponseEntity<Object> listAllRoles(@RequestParam("page_number") Optional<String> pageNumber, @RequestParam("status") Optional<String> status) {
+    @RequestMapping(value ="/roles/list", method = RequestMethod.GET)
+    public ResponseEntity<Object> listAllRoles(@RequestParam(value = "page_number", required = false) String pageNumber,
+                                               @RequestParam(value = "status", required = false) String status) {
+        Map<String, Object> listAllRolesResponse = new HashMap<>();
+
         try {
             Map<String, Object> searchMap = new HashMap<>();
 
-            pageNumber.ifPresent(s -> searchMap.put("page_number", s));
-            status.ifPresent(s -> searchMap.put("status", s));
+            searchMap.put("page_number", pageNumber);
+            searchMap.put("status", status);
 
-            Map<String, Object> listAllRolesResponse = roleService.listAllRoles(searchMap);
+            searchMap = Utility.cleanMap(searchMap);
 
-            return ResponseEntity.status(Integer.parseInt(listAllRolesResponse.get("response_code").toString())).body(listAllRolesResponse);
+            listAllRolesResponse = roleService.listAllRoles(searchMap);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
 
-            return ResponseEntity.status(500).body(new HashMap<>() {{
-                put("response_code", "500");
-                put("description", "Internal error occurred");
-                put("data", null);
-            }});
+            listAllRolesResponse.put("response_code", "500");
+            listAllRolesResponse.put("response_description", "Internal error");
+            listAllRolesResponse.put("data", null);
         }
+
+        return ResponseEntity
+                .status(Integer.parseInt(String.valueOf(listAllRolesResponse.get("response_code"))))
+                .body(listAllRolesResponse);
     }
 
-    @RequestMapping(value ="/api/v1/roles/{role_id}", method = RequestMethod.PUT)
-    public ResponseEntity<Object> updateRole(@PathVariable("role_id") String roleId, @RequestBody Map<String, Object> body) {
-        Map<String, Object> response = new HashMap<>();
+    @RequestMapping(value ="/roles/{role_id}", method = RequestMethod.PUT)
+    public ResponseEntity<Object> updateRole(@PathVariable("role_id") String roleId,
+                                             @RequestBody Map<String, Object> body) {
+        Map<String, Object> updateRoleResponse = new HashMap<>();
 
         try {
-            Map<String, Object> updateRoleResponse = roleService.updateRole(body, roleId);
-
-            return ResponseEntity.status(Integer.parseInt(updateRoleResponse.get("response_code").toString())).body(updateRoleResponse);
+            updateRoleResponse = roleService.updateRole(body, roleId);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
 
             if (e.getCause() != null){
                 if (e.getCause().getMessage().contains("duplicate key") || e.getCause().getMessage().contains("unique constraint")) {
-                    response.put("response_code", "400");
-                    response.put("description", "Failed");
-                    response.put("errors", List.of(new HashMap<>() {{
-                        put("description", "Record already exists");
-                    }}));
+                    updateRoleResponse.put("response_code", "400");
+                    updateRoleResponse.put("response_description", "Failed");
+                    updateRoleResponse.put("errors", "Record already exists");
                 } else if (e.getCause().getMessage().contains("foreign key")) {
-                    response.put("response_code", "400");
-                    response.put("description", "Failed");
-                    response.put("errors", List.of(new HashMap<>() {{
-                        put("description", "Permission not found");
-                    }}));
+                    updateRoleResponse.put("response_code", "400");
+                    updateRoleResponse.put("response_description", "Failed");
+                    updateRoleResponse.put("errors", "Permission not found");
                 }else{
-                    response.put("response_code", "500");
-                    response.put("description", "Failed");
-                    response.put("errors", List.of(new HashMap<>() {{
-                        put("description", "Internal error occurred");
-                    }}));
+                    updateRoleResponse.put("response_code", "500");
+                    updateRoleResponse.put("response_description", "Failed");
+                    updateRoleResponse.put("errors", "Internal error");
                 }
             }else {
-                response.put("response_code", "500");
-                response.put("description", "Failed");
-                response.put("errors", List.of(new HashMap<>() {{
-                    put("description", "Internal error occurred");
-                }}));
+                updateRoleResponse.put("response_code", "500");
+                updateRoleResponse.put("response_description", "Failed");
+                updateRoleResponse.put("errors", "Internal error");
             }
-
-            return ResponseEntity.status(Integer.parseInt(response.get("response_code").toString()))
-                    .body(response);
         }
+
+        return ResponseEntity.status(Integer.parseInt(String.valueOf(updateRoleResponse.get("response_code"))))
+                .body(updateRoleResponse);
     }
 
-    @RequestMapping(value ="/api/v1/roles", method = RequestMethod.POST)
+    @RequestMapping(value ="/roles", method = RequestMethod.POST)
     public ResponseEntity<Object> createRole(@RequestBody Map<String, Object> body) {
-        Map<String, Object> response = new HashMap<>();
+        Map<String, Object> createRoleResponse = new HashMap<>();
 
         try {
             List<String> requiredFields = new ArrayList<>();
@@ -128,68 +125,58 @@ public class RoleController {
             Map<String, Object> dataValidationResult = dataValidation.areFieldsValid(body, requiredFields);
 
             if (Boolean.parseBoolean(dataValidationResult.get("valid").toString())) {
-                Map<String, Object> createRoleResponse = roleService.createRole(body);
-
-                return ResponseEntity.status(Integer.parseInt(createRoleResponse.get("response_code").toString())).body(createRoleResponse);
+                createRoleResponse = roleService.createRole(body);
             } else {
-                Map validationErrorMap = (Map) dataValidationResult.get("errors");
-
-                response.put("response_code", "400");
-                response.put("description", "Failed");
-                response.put("errors", List.of(validationErrorMap.get("message")));
-
-                return ResponseEntity.status(400).body(response);
+                createRoleResponse.put("response_code", "400");
+                createRoleResponse.put("response_description", "Failed");
+                createRoleResponse.put("errors", dataValidationResult.get("errors"));
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
 
-            if (e.getCause() != null && (e.getCause().getMessage().contains("duplicate key") || e.getCause().getMessage().contains("unique constraint"))){
-                response.put("response_code", "400");
-                response.put("description", "Failed");
-                response.put("errors", List.of(new HashMap<>() {{
-                    put("description", "Role already exists");
-                }}));
+            if (e.getCause() != null && (e.getCause().getMessage().contains("duplicate key") ||
+                    e.getCause().getMessage().contains("unique constraint"))){
+                createRoleResponse.put("response_code", "400");
+                createRoleResponse.put("response_description", "Failed");
+                createRoleResponse.put("errors", "Role already exists");
             }else if (e.getCause() != null && e.getCause().getMessage().contains("foreign key constraint")){
-                response.put("response_code", "400");
-                response.put("description", "Failed");
-                response.put("errors", List.of(new HashMap<>() {{
-                    put("description", "Permission does not exist");
-                }}));
+                createRoleResponse.put("response_code", "400");
+                createRoleResponse.put("response_description", "Failed");
+                createRoleResponse.put("errors", "Permission does not exist");
             }else {
-                response.put("response_code", "500");
-                response.put("description", "Failed");
-                response.put("errors", List.of(new HashMap<>() {{
-                    put("description", "Internal error occurred");
-                }}));
+                createRoleResponse.put("response_code", "500");
+                createRoleResponse.put("response_description", "Failed");
+                createRoleResponse.put("errors", "Internal error");
             }
-
-            return ResponseEntity.status(Integer.parseInt(response.get("response_code").toString()))
-                    .body(response);
         }
+
+        return ResponseEntity
+                .status(Integer.parseInt(String.valueOf(createRoleResponse.get("response_code"))))
+                .body(createRoleResponse);
     }
 
-    @RequestMapping(value ="/api/v1/roles/{role_id}", method = RequestMethod.DELETE)
+    @RequestMapping(value ="/roles/{role_id}", method = RequestMethod.DELETE)
     public ResponseEntity<Object> deleteRole(@PathVariable("role_id") String roleId) {
+        Map<String, Object> deleteRoleResponse = new HashMap<>();
+
         try {
             if (!roleId.trim().equalsIgnoreCase("")) {
-                Map<String, Object> deleteRoleResponse = roleService.deleteRole(roleId.trim());
-
-                return ResponseEntity.status(Integer.parseInt(deleteRoleResponse.get("response_code").toString())).body(deleteRoleResponse);
+                deleteRoleResponse = roleService.deleteRole(roleId.trim());
             } else {
-                return ResponseEntity.status(404).body(new HashMap<>() {{
-                    put("response_code", "404");
-                    put("description", "Success");
-                    put("data", null);
-                }});
+                deleteRoleResponse.put("response_code", "200");
+                deleteRoleResponse.put("response_description", "Success");
+                deleteRoleResponse.put("data", null);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
 
-            return ResponseEntity.status(500).body(new HashMap<>() {{
-                put("response_code", "500");
-                put("description", "Internal error occurred");
-                put("data", null);
-            }});
+            deleteRoleResponse.put("response_code", "500");
+            deleteRoleResponse.put("response_description", "Internal error");
+            deleteRoleResponse.put("data", null);
         }
+
+        return ResponseEntity
+                .status(Integer.parseInt(String.valueOf(deleteRoleResponse.get("response_code"))))
+                .body(deleteRoleResponse);
     }
 }
