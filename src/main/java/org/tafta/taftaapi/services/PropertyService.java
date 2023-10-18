@@ -32,8 +32,8 @@ public class PropertyService {
                 response.put("response_description", "Success");
                 response.put("response_data", createPropertyResponse);
             }else{
-                response.put("response_code", "200");
-                response.put("response_description", "Record not updated");
+                response.put("response_code", "400");
+                response.put("response_description", "Property not updated");
                 response.put("response_data", null);
             }
         } catch (Exception e) {
@@ -76,8 +76,8 @@ public class PropertyService {
                         response.put("response_data", null);
                     }
                 }else{
-                    response.put("response_code", "200");
-                    response.put("response_description", "Record not updated");
+                    response.put("response_code", "400");
+                    response.put("response_description", "Property not updated");
                     response.put("response_data", null);
                 }
             } else {
@@ -190,7 +190,7 @@ public class PropertyService {
                     response.put("response_description", "Success");
                     response.put("response_data", null);
                 }else{
-                    response.put("response_code", "200");
+                    response.put("response_code", "400");
                     response.put("response_description", "Property not deleted");
                     response.put("response_data", null);
                 }

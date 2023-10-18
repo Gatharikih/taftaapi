@@ -56,10 +56,10 @@ public class RoleController {
         Map<String, Object> listAllRolesResponse = new HashMap<>();
 
         try {
-            Map<String, Object> searchMap = new HashMap<>();
-
-            searchMap.put("page_number", pageNumber);
-            searchMap.put("status", status);
+            Map<String, Object> searchMap = new HashMap<>(){{
+                put("page_number", pageNumber);
+                put("status", status);
+            }};
 
             searchMap = Utility.cleanMap(searchMap);
 
@@ -160,7 +160,7 @@ public class RoleController {
         Map<String, Object> deleteRoleResponse = new HashMap<>();
 
         try {
-            if (!roleId.trim().equalsIgnoreCase("")) {
+            if (!roleId.trim().isEmpty()) {
                 deleteRoleResponse = roleService.deleteRole(roleId.trim());
             } else {
                 deleteRoleResponse.put("response_code", "200");

@@ -9,10 +9,8 @@ import org.apache.commons.codec.digest.HmacAlgorithms;
 import org.apache.commons.codec.digest.HmacUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.tafta.taftaapi.enums.CompanyStatus;
-import org.tafta.taftaapi.enums.Role_PermissionStatus;
 import org.tafta.taftaapi.enums.Status;
-import org.tafta.taftaapi.utility.ConvertTo;
+import org.tafta.taftaapi.enums.Status;
 import org.tafta.taftaapi.utility.Utility;
 
 import javax.crypto.Mac;
@@ -24,7 +22,6 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * @author Gathariki Ngigi
@@ -464,13 +461,16 @@ public class DBFunctionImpl {
     // <editor-fold default-state="collapsed" desc="deleteProperty(String id)">
     public Map<String, Object> deleteProperty(String propertyId) {
         try {
-            LinkedHashMap<String, Object> params = new LinkedHashMap<>();
-
             LocalDateTime now = LocalDateTime.now();
+            String sql;
+            String table = "properties";
 
-            params.put("status", Status.DELETED.name());
-            params.put("deleted_at", now);
-            params.put("updated_by", "admin");
+            LinkedHashMap<String, Object> params = new LinkedHashMap<>(){{
+                put("status", Status.DELETED.name());
+                put("updated_at", now);
+                put("deleted_at", now);
+                put("updated_by", "admin");
+            }};
 
             params = Utility.cleanMap(params);
 
@@ -478,11 +478,9 @@ public class DBFunctionImpl {
                 put("property_id", propertyId);
             }};
 
-            String sql;
-            String table = "properties";
+            params = Utility.cleanMap(params);
 
             sql = Models.UpdateString(table, params, where_params);
-
             sql += " returning *";
 
             List<Map<String, Object>> results = NamedBaseExecute(sql, params, where_params, new MapResultHandler());
@@ -553,45 +551,45 @@ public class DBFunctionImpl {
     //
     // <editor-fold default-state="collapsed" desc="updateProperty(Map<String, Object> entryParams)">
     public Map<String, Object> updateProperty(Map<String, Object> entryParams) {
-        LinkedHashMap<String, Object> params = new LinkedHashMap<>();
-
         try {
             LocalDateTime now = LocalDateTime.now();
+            String sql;
+            String table = "properties";
 
-            params.put("company", entryParams.get("company"));
-            params.put("county", entryParams.get("county"));
-            params.put("created_at", now);
-            params.put("created_by", entryParams.get("user")); // TODO: Get user from authentication context
-            params.put("latitude", entryParams.get("latitude"));
-            params.put("location", entryParams.get("location"));
-            params.put("longitude", entryParams.get("longitude"));
-            params.put("maximum_price", entryParams.get("maximum_price"));
-            params.put("metadata", entryParams.get("metadata"));
-            params.put("minimum_price", entryParams.get("minimum_price"));
-            params.put("property_description", entryParams.get("property_description"));
-            params.put("property_name", entryParams.get("property_name"));
-            params.put("property_price", entryParams.get("property_price"));
-            params.put("property_type", entryParams.get("property_type"));
-            params.put("property_amenities", entryParams.get("property_amenities"));
-            params.put("published_at", now);
+            if(Status.valueOf(String.valueOf(entryParams.get("status"))).equals(Status.DELETED)){
+                return null;
+            }
 
-            params.put("status", entryParams.get("status") != null ? Optional.of(Status.getStatusType(String.valueOf(entryParams.get("status"))))
-                    .orElse(Status.getStatusType("active")) : Status.getStatusType("active"));
-
-            params.put("updated_at", now);
-            params.put("updated_by", entryParams.get("user"));
-
-            params.put("verified", entryParams.get("verified") != null ?
-                    Boolean.parseBoolean((String.valueOf(entryParams.getOrDefault("verified", false)))) : Boolean.FALSE);
+            LinkedHashMap<String, Object> params = new LinkedHashMap<>(){{
+                put("company", entryParams.get("company"));
+                put("county", entryParams.get("county"));
+                put("created_at", now);
+                put("created_by", entryParams.get("user")); // TODO: Get user from authentication context
+                put("latitude", entryParams.get("latitude"));
+                put("location", entryParams.get("location"));
+                put("longitude", entryParams.get("longitude"));
+                put("maximum_price", entryParams.get("maximum_price"));
+                put("metadata", entryParams.get("metadata"));
+                put("minimum_price", entryParams.get("minimum_price"));
+                put("property_description", entryParams.get("property_description"));
+                put("property_name", entryParams.get("property_name"));
+                put("property_price", entryParams.get("property_price"));
+                put("property_type", entryParams.get("property_type"));
+                put("property_amenities", entryParams.get("property_amenities"));
+                put("published_at", now);
+                put("status", entryParams.get("status") != null ? Optional.of(Status.getStatusType(String.valueOf(entryParams.get("status"))))
+                        .orElse(Status.getStatusType("active")) : Status.getStatusType("active"));
+                put("updated_at", now);
+                put("updated_by", entryParams.get("user"));
+                put("verified", entryParams.get("verified") != null ?
+                        Boolean.parseBoolean((String.valueOf(entryParams.getOrDefault("verified", false)))) : Boolean.FALSE);
+            }};
 
             params = Utility.cleanMap(params);
 
             LinkedHashMap<String, Object> where_params = new LinkedHashMap<>(){{
                 put("property_id", String.valueOf(entryParams.get("property_id")));
             }};
-
-            String sql;
-            String table = "properties";
 
             sql = Models.UpdateString(table, params, where_params);
 
@@ -734,7 +732,7 @@ public class DBFunctionImpl {
     public Map<String, Object> deleteCompany(String id) {
         LinkedHashMap<String, Object> params = new LinkedHashMap<>();
 
-        params.put("status", CompanyStatus.DELETED);
+        params.put("status", Status.DELETED);
         params.put("deleted_at", Timestamp.valueOf(LocalDateTime.now()));
 
         LinkedHashMap<String, Object> where_params = new LinkedHashMap<>();
@@ -760,54 +758,58 @@ public class DBFunctionImpl {
     // </editor-fold>
     //
     // <editor-fold default-state="collapsed" desc="createCompany(Map<String, Object> entryParams)">
-    public List<Map<String, Object>> createCompany(Map<String, Object> entryParams) {
-        LinkedHashMap<String, Object> params = new LinkedHashMap<>();
+    public Map<String, Object> createCompany(Map<String, Object> entryParams) {
+        try {
+            LinkedHashMap<String, Object> params = new LinkedHashMap<>();
 
-        params.put("company_address", entryParams.get("company_address"));
-        params.put("company_description", entryParams.get("company_description"));
-        params.put("company_email", entryParams.get("company_email"));
-        params.put("company_name", entryParams.get("company_name"));
+            params.put("company_address", entryParams.get("company_address"));
+            params.put("company_description", entryParams.get("company_description"));
+            params.put("company_email", entryParams.get("company_email"));
+            params.put("company_name", entryParams.get("company_name"));
 
-        params.put("password", entryParams.get("password"));
-        params.put("contact_person", entryParams.get("contact_person"));
-        params.put("created_at", Timestamp.valueOf(LocalDateTime.now()));
-        params.put("updated_at", Timestamp.valueOf(LocalDateTime.now()));
-        params.put("published_at", Timestamp.valueOf(LocalDateTime.now()));
-        params.put("api_key", entryParams.get("api_key"));
-        params.put("api_password", entryParams.get("api_password"));
+            params.put("password", entryParams.get("password"));
+            params.put("contact_person", entryParams.get("contact_person"));
+            params.put("created_at", Timestamp.valueOf(LocalDateTime.now()));
+            params.put("updated_at", Timestamp.valueOf(LocalDateTime.now()));
+            params.put("published_at", Timestamp.valueOf(LocalDateTime.now()));
+            params.put("api_key", entryParams.get("api_key"));
+            params.put("api_password", entryParams.get("api_password"));
 //        params.put("api_access", entryParams.get("api_access"));
-        params.put("created_by", entryParams.getOrDefault("created_by", "0"));
-        params.put("updated_by", entryParams.getOrDefault("updated_by", "0"));
+            params.put("created_by", entryParams.getOrDefault("created_by", "0"));
+            params.put("updated_by", entryParams.getOrDefault("updated_by", "0"));
 
-        if(entryParams.get("company_id") != null){
-            params.put("company_id", entryParams.get("company_id"));
-        }else{
-            String propertyId = Utility.generateRandomFromUUID();
+            if(entryParams.get("company_id") != null){
+                params.put("company_id", entryParams.get("company_id"));
+            }else{
+                String propertyId = Utility.generateRandomFromUUID();
 
-            params.put("company_id", propertyId);
-        }
-
-        if(entryParams.get("status") != null){
-            try {
-                params.put("status", Optional.of(CompanyStatus.getCompanyStatusType(String.valueOf(entryParams.get("status"))))
-                        .orElse(Status.getStatusType("active")));
-            } catch (Exception e) {
-                log.error(e.getMessage());
+                params.put("company_id", propertyId);
             }
-        }
 
-        params = Utility.cleanMap(params);
+            if(entryParams.get("status") != null){
+                try {
+                    params.put("status", Optional.of(Status.getStatusType(String.valueOf(entryParams.get("status"))))
+                            .orElse(Status.getStatusType("active")));
+                } catch (Exception e) {
+                    log.error(e.getMessage());
+                }
+            }
 
-        String sql;
-        String table = "properties";
+            params = Utility.cleanMap(params);
 
-        sql = Models.InsertString(table, params);
-        sql += " returning *";
+            String sql;
+            String table = "properties";
 
-        List<Map<String, Object>> results = NamedBaseExecute(sql, params, null, new MapResultHandler());
+            sql = Models.InsertString(table, params);
+            sql += " returning *";
 
-        if(!results.isEmpty()){
-            return results;
+            List<Map<String, Object>> results = NamedBaseExecute(sql, params, null, new MapResultHandler());
+
+            if(results != null && !results.isEmpty()){
+                return results.get(0);
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage());
         }
 
         return null;
@@ -860,7 +862,7 @@ public class DBFunctionImpl {
 
         if(entryParams.get("status") != null){
             try {
-                params.put("status", CompanyStatus.getCompanyStatusType(String.valueOf(entryParams.get("status"))));
+                params.put("status", Status.getStatusType(String.valueOf(entryParams.get("status"))));
             } catch (Exception e) {
                 log.error(e.getMessage());
             }
@@ -943,27 +945,25 @@ public class DBFunctionImpl {
     //
     // <editor-fold default-state="collapsed" desc="deletePermission(String id)">
     public Map<String, Object> deletePermission(String id) {
-        LinkedHashMap<String, Object> params = new LinkedHashMap<>();
-
         try {
             LocalDateTime now = LocalDateTime.now();
+            String sql;
+            String table = "permissions";
 
-            params.put("updated_at", now);
-            params.put("deleted_at", now);
-            params.put("updated_by", params.getOrDefault("user", "admin"));
-            params.put("status", Status.DELETED.name());
+            LinkedHashMap<String, Object> params = new LinkedHashMap<>(){{
+                put("updated_at", now);
+                put("deleted_at", now);
+                put("updated_by", "admin");
+                put("status", Status.DELETED.name());
+            }};
 
             LinkedHashMap<String, Object> where_params = new LinkedHashMap<>(){{
                 put("id", Integer.parseInt(id));
             }};
 
-            String sql;
-            String table = "permissions";
-
-            where_params.put("id", Integer.parseInt(id));
+            params = Utility.cleanMap(params);
 
             sql = Models.UpdateString(table, params, where_params);
-
             sql += " returning *";
 
             List<Map<String, Object>> results = NamedBaseExecute(sql, params, where_params, new MapResultHandler());
@@ -987,7 +987,7 @@ public class DBFunctionImpl {
 
             params.put("action", String.valueOf(entryParams.get("action")).toUpperCase());
 
-            if (entryParams.get("description") != null) {
+            if (entryParams.get("description") != null || !String.valueOf(entryParams.get("description")).isEmpty()) {
                 params.put("description", entryParams.get("description"));
             } else {
                 params.put("description", String.valueOf(entryParams.get("action")).toLowerCase());
@@ -1023,29 +1023,26 @@ public class DBFunctionImpl {
     // <editor-fold default-state="collapsed" desc="updatePermission(Map<String, Object> entryParams)">
     public Map<String, Object> updatePermission(Map<String, Object> entryParams) {
         try {
-            LinkedHashMap<String, Object> params = new LinkedHashMap<>();
             LocalDateTime now = LocalDateTime.now();
-
-            if(entryParams.get("description") != null) {
-                params.put("description", entryParams.get("description"));
-            }
-
-            params.put("status", Status.valueOf(String.valueOf(entryParams.get("status"))));
-            params.put("updated_at", now);
-            params.put("updated_by", entryParams.getOrDefault("user", "admin"));
-
-            params = Utility.cleanMap(params);
-
-            LinkedHashMap<String, Object> where_params = new LinkedHashMap<>();
-
             String sql;
             String table = "permissions";
 
-            if(entryParams.get("id") != null) {
-                where_params.put("id", Integer.parseInt(String.valueOf(entryParams.get("id"))));
-            }else{
+            if(Status.valueOf(String.valueOf(entryParams.get("status"))).equals(Status.DELETED)){
                 return null;
             }
+
+            LinkedHashMap<String, Object> params = new LinkedHashMap<>(){{
+                put("description", entryParams.get("description"));
+                put("status", Status.valueOf(String.valueOf(entryParams.get("status"))));
+                put("updated_at", now);
+                put("updated_by", entryParams.getOrDefault("user", "admin"));
+            }};
+
+            params = Utility.cleanMap(params);
+
+            LinkedHashMap<String, Object> where_params = new LinkedHashMap<>(){{
+                put("id", Integer.parseInt(String.valueOf(entryParams.get("id"))));
+            }};
 
             sql = Models.UpdateString(table, params, where_params);
 
@@ -1096,52 +1093,56 @@ public class DBFunctionImpl {
 
     // <editor-fold default-state="collapsed" desc="searchRoleById(String id)">
     public Map<String, Object> searchRoleById(String id) {
-        LinkedHashMap<String, Object> param = new LinkedHashMap<>();
-        String sql = "SELECT * FROM roles WHERE id=:id LIMIT 1";
-
-        param.put("id", Integer.parseInt(id));
-
-        List<Map<String, Object>> properties = NamedBaseExecute(sql, param, null,
-                new MapResultHandler());
-
-        return !properties.isEmpty() ? properties.get(0) : null;
-    }
-    // </editor-fold>
-    //
-    // <editor-fold default-state="collapsed" desc="deleteRole(String id)">
-    public Map<String, Object> deleteRole(String id) {
-        LinkedHashMap<String, Object> params = new LinkedHashMap<>();
-        LocalDateTime now = LocalDateTime.now();
-
-        params.put("updated_at", now);
-        params.put("deleted_at", now);
-
         try {
-            if(params.get("status") != null){
-                params.put("status", Role_PermissionStatus.getRole_PermissionStatusType(String.valueOf(params.get("status"))));
-            }else{
-                params.put("status", Status.valueOf("deleted").name());
+            String sql = "SELECT * FROM roles WHERE id=:id LIMIT 1";
+
+            LinkedHashMap<String, Object> param = new LinkedHashMap<>(){{
+                put("id", Integer.parseInt(id));
+            }};
+
+            List<Map<String, Object>> properties = NamedBaseExecute(sql, param, null, new MapResultHandler());
+
+            if(!properties.isEmpty()){
+                return properties.get(0);
             }
         } catch (Exception e) {
             log.error(e.getMessage());
         }
 
-        LinkedHashMap<String, Object> where_params = new LinkedHashMap<>();
-        where_params.put("id", Integer.parseInt(id));
+        return null;
+    }
+    // </editor-fold>
+    //
+    // <editor-fold default-state="collapsed" desc="deleteRole(String id)">
+    public Map<String, Object> deleteRole(String id) {
+        try {
+            LocalDateTime now = LocalDateTime.now();
+            String sql;
+            String table = "roles";
 
-        String sql;
-        String table = "roles";
+            LinkedHashMap<String, Object> params = new LinkedHashMap<>(){{
+                put("updated_by", "admin");
+                put("updated_at", now);
+                put("deleted_at", now);
+                put("status", Status.DELETED.name());
+            }};
 
-        where_params.put("id", Integer.parseInt(id));
+            LinkedHashMap<String, Object> where_params = new LinkedHashMap<>(){{
+                put("id", Integer.parseInt(id));
+            }};
 
-        sql = Models.UpdateString(table, params, where_params);
+            params = Utility.cleanMap(params);
 
-        sql += " returning *";
+            sql = Models.UpdateString(table, params, where_params);
+            sql += " returning *";
 
-        List<Map<String, Object>> results = NamedBaseExecute(sql, params, where_params, new MapResultHandler());
+            List<Map<String, Object>> results = NamedBaseExecute(sql, params, where_params, new MapResultHandler());
 
-        if(!results.isEmpty()){
-            return results.get(0);
+            if(!results.isEmpty()){
+                return results.get(0);
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage());
         }
 
         return null;
@@ -1156,7 +1157,7 @@ public class DBFunctionImpl {
 
             params.put("name", String.valueOf(entryParams.get("name")).toUpperCase());
 
-            if(entryParams.get("description") != null){
+            if(entryParams.get("description") != null || !String.valueOf(entryParams.get("description")).isEmpty()){
                 params.put("description", entryParams.get("description"));
             }else {
                 params.put("description", String.valueOf(entryParams.get("name")).toLowerCase());
@@ -1172,18 +1173,15 @@ public class DBFunctionImpl {
                 return null;
             }
 
-            // entryParams.get("permissions")
             List<String> permissionsProvidedStr = mapper.convertValue(entryParams.get("permissions"), new TypeReference<>() {});
-            List<Integer> permissionsProvidedInt = permissionsProvidedStr.stream().map(Integer::parseInt).toList();
+            List<Integer> permissionsProvidedInt = new ArrayList<>(new HashSet<>(permissionsProvidedStr.stream().map(Integer::parseInt).toList()));
+            List<Map<String, Object>> permissionsFound = searchPermissions(permissionsProvidedInt);
 
-            int numOfPermissionsProvided = permissionsProvidedInt.size();
-            int numOfPermissionsFound = searchPermissions(permissionsProvidedInt);
+            if(!permissionsFound.isEmpty()){
+                String permissionsString = permissionsFound.stream()
+                        .map(stringObjectMap -> String.valueOf(stringObjectMap.get("id"))).collect(Collectors.joining(",", "", ""));
 
-            log.info("numOfPermissionsProvided: " + numOfPermissionsProvided);
-            log.info("numOfPermissionsFound: " + numOfPermissionsFound);
-
-            if(numOfPermissionsProvided == numOfPermissionsFound){
-                params.put("permissions", null);
+                params.put("permissions", permissionsString);
 
                 params = Utility.cleanMap(params);
 
@@ -1208,32 +1206,20 @@ public class DBFunctionImpl {
     // </editor-fold>
     //
     // <editor-fold default-state="collapsed" desc="searchPermissions(List<String> permissionsGiven))">
-    public int searchPermissions(List<Integer> permissionsGivenMayHaveDuplicates){
+    public List<Map<String, Object>> searchPermissions(List<Integer> permissionsGivenMayHaveDuplicates){
         try {
             List<Integer> permissionsWithoutDuplicates = new ArrayList<>(new HashSet<>(permissionsGivenMayHaveDuplicates));
-//            Map<Integer, Integer> permissionsGivenMap = permissionsWithoutDuplicates.stream().collect(Collectors.toMap(Integer::intValue, Integer::intValue));
+            String permissionsStringInBrackets = permissionsWithoutDuplicates.stream()
+                    .map(String::valueOf).collect(Collectors.joining(",", "(", ")"));
 
-            String str = "";
-//            permissionsWithoutDuplicates.stream().map(integer -> str[0] += String.valueOf(integer)).collect(Collectors.joining(","));
+            String sql = "SELECT id FROM permissions WHERE id IN " + permissionsStringInBrackets + " AND status='ACTIVE'";
 
-            log.info("permissionsGivenMap: " +permissionsWithoutDuplicates.stream().map(integer -> str += String.valueOf(integer)));
-//            log.info("permissionsGivenMap.values(): " + permissionsGivenMap.);
-
-            LinkedHashMap<String, Object> param = new LinkedHashMap<>();
-            String sql = "SELECT COUNT(*) FROM permissions WHERE id IN (" + permissionsWithoutDuplicates + ") GROUP BY id ORDER BY id)";
-
-            log.info("sql: " + sql);
-
-            List<Map<String, Object>> permissions = NamedBaseExecute(sql, param, null, new MapResultHandler());
-
-            log.info("permissions: " + permissions);
-
-            return permissions.size();
+            return NamedBaseExecute(sql, null, null, new MapResultHandler());
         } catch (Exception e) {
             log.error(e.getMessage());
         }
 
-        return 0;
+        return new ArrayList<>();
     }
     // </editor-fold>
     //
@@ -1256,147 +1242,77 @@ public class DBFunctionImpl {
     // </editor-fold>
     //
     // <editor-fold default-state="collapsed" desc="updateRole(Map<String, Object> entryParams)">
-    public int updatePermissions(Map<String, Object> entryParams) {
-        numOfOperations = 0;
-        List<Object> permissionList = mapper.convertValue(entryParams.get("permissions"), new TypeReference<>() {});
-        List<Object> allAssignedPermissions = findAllPermissionsAssignedToRole(String.valueOf(entryParams.get("id")));
-
-        List<Object> orderedPermissionList =  permissionList.stream().sorted().toList();
-        List<Object> allAssignedPermissionsOrdered = allAssignedPermissions.stream().sorted().toList(); // Arrays.asList("1", "2", "3", "4");
-        List<Object> unlikeElements = null;
-
-        try {
-            if(!orderedPermissionList.equals(allAssignedPermissionsOrdered)){
-                if(orderedPermissionList.size() > allAssignedPermissionsOrdered.size()){
-                    // new permissions to add to role
-                    addNewPermission = true;
-
-                    unlikeElements = ConvertTo.itemsNotPresentInList(orderedPermissionList, allAssignedPermissionsOrdered);
-                }else{
-                    // permission to be removed from the role
-                    stripePermission = true;
-
-                    unlikeElements = ConvertTo.itemsNotPresentInList(allAssignedPermissionsOrdered, orderedPermissionList);
-                }
-            }
-
-            // TODO: Bug resulting from Jodd using executeQuery which sometimes does not return results as expected - can be replaced with executeUpdate in place
-            if (unlikeElements != null && !unlikeElements.isEmpty()) {
-                // Update Role-Permission tbl
-                while (numOfOperations < unlikeElements.size()) {
-                    unlikeElements.forEach(permission -> {
-                        String rolePermissionLink_sql = "";
-                        String table2 = "permissions_role_links";
-
-                        LinkedHashMap<String, Object> rolePermissionLink_params = new LinkedHashMap<>();
-
-                        if (addNewPermission && !stripePermission) {
-                            rolePermissionLink_params.put("permission_id", Integer.parseInt(String.valueOf(permission)));
-                            rolePermissionLink_params.put("id", entryParams.get("id"));
-
-                            rolePermissionLink_sql = Models.InsertString(table2, rolePermissionLink_params);
-                            rolePermissionLink_sql += " returning *";
-                        }
-
-                        if(stripePermission && !addNewPermission){
-                            rolePermissionLink_params.put("permission_id", Integer.parseInt(String.valueOf(permission)));
-                            rolePermissionLink_params.put("id", entryParams.get("id"));
-
-                            rolePermissionLink_sql = "DELETE FROM permissions_role_links WHERE permission_id=:permission_id AND id=:id returning *";
-                        }
-
-                        List<Map<String, Object>> rolePermissionLinkResult = NamedBaseExecute(rolePermissionLink_sql,
-                                null, rolePermissionLink_params, new MapResultHandler());
-
-                        if (rolePermissionLinkResult != null && !rolePermissionLinkResult.isEmpty()) {
-                            numOfOperations++;
-                        }
-                    });
-                }
-
-                if((numOfOperations + 1) > unlikeElements.size()){
-                    return numOfOperations;
-                }
-            }else{
-                return 1;
-            }
-        } catch (Exception e) {
-            log.error(e.getMessage());
-
-            return -1;
-        }
-
-        return numOfOperations;
-    }
-
     public Map<String, Object> updateRole(Map<String, Object> entryParams){
-        int updatePermissionsStatus = updatePermissions(entryParams);
-
-        log.error("updatePermissionsStatus: " + updatePermissionsStatus);
-
-        if (updatePermissionsStatus > 0) {
-            // Update Role tbl
-            String rolePermissionLinkUpdate_sql;
+        try {
+            LocalDateTime now = LocalDateTime.now();
             String table = "roles";
+            String sql;
             LinkedHashMap<String, Object> roleParams = new LinkedHashMap<>();
 
-            if(entryParams.get("description") != null) {
-                roleParams.put("description", entryParams.get("description"));
+            if (entryParams.get("permissions") != null) {
+                List<String> permissionsProvidedStr = mapper.convertValue(entryParams.get("permissions"), new TypeReference<>() {});
+                List<Integer> permissionsProvidedInt = new ArrayList<>(new HashSet<>(permissionsProvidedStr.stream()
+                        .map(Integer::parseInt).toList()));
+
+                List<Map<String, Object>> permissionsFound = searchPermissions(permissionsProvidedInt);
+
+                if(!permissionsFound.isEmpty()){
+                    String permissionsString = permissionsFound.stream()
+                            .map(stringObjectMap -> String.valueOf(stringObjectMap.get("id"))).collect(Collectors.joining(",", "", ""));
+
+                    roleParams.put("permissions", permissionsString);
+                }
             }
 
-            if(entryParams.get("type") != null) {
-                roleParams.put("type", entryParams.get("type"));
+            if (entryParams.get("status") != null && !Status.valueOf(String.valueOf(entryParams.get("status"))).equals(Status.DELETED)) {
+                roleParams.put("status", Status.valueOf(String.valueOf(entryParams.get("status"))).name());
             }
 
-            roleParams.put("updated_at", Timestamp.valueOf(LocalDateTime.now()));
-            roleParams.put("updated_by", entryParams.getOrDefault("updated_by", "0"));
+            roleParams.put("description", entryParams.get("description"));
+            roleParams.put("updated_at", now);
+            roleParams.put("updated_by", entryParams.getOrDefault("user", "admin"));
 
             roleParams = Utility.cleanMap(roleParams);
 
-            LinkedHashMap<String, Object> where_params = new LinkedHashMap<>();
+            LinkedHashMap<String, Object> where_params = new LinkedHashMap<>(){{
+                put("id", Integer.parseInt(String.valueOf(entryParams.get("id"))));
+            }};
 
-            if(entryParams.get("id") != null) {
-                where_params.put("id", Integer.parseInt(String.valueOf(entryParams.get("id"))));
-            }else{
-                return null;
+            sql = Models.UpdateString(table, roleParams, where_params);
+            sql += " returning *";
+
+            List<Map<String, Object>> results = NamedBaseExecute(sql, roleParams, where_params,
+                    new MapResultHandler());
+
+            if(!results.isEmpty()){
+                return results.get(0);
             }
-
-            rolePermissionLinkUpdate_sql = Models.UpdateString(table, roleParams, where_params);
-            rolePermissionLinkUpdate_sql += " returning *";
-
-            List<Map<String, Object>> roleUpdateResult = NamedBaseExecute(rolePermissionLinkUpdate_sql,
-                    roleParams, where_params, new MapResultHandler());
-
-            return !roleUpdateResult.isEmpty() ? roleUpdateResult.get(0) : null;
-        } else {
-            return null;
+        } catch (Exception e) {
+            log.error(e.getMessage());
         }
+
+        return null;
     }
 
     // </editor-fold>
     //
     // <editor-fold default-state="collapsed" desc="listAllRoles(Map<String, Object> queryParams) ">
     public List<Map<String, Object>> listAllRoles(Map<String, Object> queryParams) {
-        LinkedHashMap<String, Object> param = new LinkedHashMap<>();
-
-        String limit = "50";
-
-        String sql = "SELECT * FROM roles WHERE LOWER(status)=LOWER(:status) ORDER BY id ASC LIMIT " + limit + " OFFSET :offset";
+        String sql = "SELECT * FROM roles WHERE LOWER(status)=LOWER(:status) ORDER BY id ASC LIMIT :limit OFFSET :offset";
 
         try {
-//            param.put("limit", limit);
-            param.put("status", Role_PermissionStatus.getRole_PermissionStatusType(String.valueOf(queryParams.getOrDefault("status",
-                    Role_PermissionStatus.ACTIVE.name()))));
+            Map<String, Object> limitAndOffset = Utility.getLimitAndOffset(50, queryParams);
 
-            if(queryParams.get("page_number") == null){
-                param.put("offset", 0);
-            }else{
-                param.put("offset", (Integer.parseInt(String.valueOf(queryParams.getOrDefault("page_number", "0"))) - 1) * Integer.parseInt(limit));
-            }
+            int limit = Integer.parseInt(String.valueOf(limitAndOffset.get("limit")));
+            int offset = Integer.parseInt(String.valueOf(limitAndOffset.get("offset")));
 
-            log.error("param: " + param);
+            LinkedHashMap<String, Object> where_param = new LinkedHashMap<>(){{
+                put("status", queryParams.getOrDefault("status", "ACTIVE"));
+                put("limit", limit);
+                put("offset", offset);
+            }};
 
-            List<Map<String, Object>> property = NamedBaseExecute(sql, null, param, new MapResultHandler());
+            List<Map<String, Object>> property = NamedBaseExecute(sql, null, where_param, new MapResultHandler());
 
             return !property.isEmpty() ? property : null;
         } catch (Exception e) {

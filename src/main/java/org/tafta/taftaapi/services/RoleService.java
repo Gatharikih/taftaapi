@@ -32,8 +32,8 @@ public class RoleService {
                 response.put("description", "Success");
                 response.put("data", createRoleResponse);
             }else{
-                response.put("response_code", "200");
-                response.put("description", "Record not created");
+                response.put("response_code", "400");
+                response.put("description", "Role not created - assign active permissions");
                 response.put("data", null);
             }
         } catch (Exception e) {
@@ -59,18 +59,17 @@ public class RoleService {
             Map<String, Object> roleResponse = dbFunction.searchRoleById(roleId);
 
             if (roleResponse != null) {
-                roleParams.put("id", roleId);
-                roleParams.put("role_id", roleResponse.get("role_id").toString());
+                roleParams.put("id", roleResponse.get("id"));
 
                 Map<String, Object> updateRoleResponse = dbFunction.updateRole(roleParams);
 
                 if(updateRoleResponse != null){
-                    response.put("response_code", "201");
-                    response.put("description", "Success");
-                    response.put("data", null);
-                }else{
                     response.put("response_code", "200");
-                    response.put("description", "Record not updated");
+                    response.put("description", "Success");
+                    response.put("data", updateRoleResponse.get("id"));
+                }else{
+                    response.put("response_code", "400");
+                    response.put("description", "Role not updated");
                     response.put("data", null);
                 }
             } else {
@@ -156,12 +155,12 @@ public class RoleService {
                     response.put("description", "Success");
                     response.put("data", deleteRoleResponse.get("id"));
                 }else{
-                    response.put("response_code", "200");
+                    response.put("response_code", "400");
                     response.put("description", "Role not deleted");
                     response.put("data", null);
                 }
             }else{
-                response.put("response_code", "200");
+                response.put("response_code", "400");
                 response.put("description", "Role not found");
                 response.put("data", null);
             }

@@ -1,15 +1,17 @@
 package org.tafta.taftaapi.repo;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.util.*;
-import org.tafta.taftaapi.repo.DBFunctionImpl;
 
 /**
  * @author Gathariki Ngigi
  * Created on April 25, 2023.
  * Time 1518h
  */
+@Slf4j
 public class MapResultHandler implements DBFunctionImpl.ResultHandler<List<Map<String, Object>>> {
     @Override
     public List<Map<String, Object>> handle(ResultSet rs) {
@@ -37,7 +39,7 @@ public class MapResultHandler implements DBFunctionImpl.ResultHandler<List<Map<S
                 }
             }
         }catch (Exception e){
-            e.printStackTrace();
+           log.error(e.getMessage());
         }
 
         return requests;

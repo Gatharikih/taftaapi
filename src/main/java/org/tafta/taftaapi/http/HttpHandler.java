@@ -10,7 +10,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
-import org.tafta.taftaapi.utility.ConvertTo;
+import org.tafta.taftaapi.utility.Utility;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
@@ -153,7 +153,7 @@ public class HttpHandler {
         } catch (Exception e) {
 
                 String body = e.getMessage().substring(e.getMessage().indexOf("{"));
-                JsonNode res = ConvertTo.jsonNodeFromStr(body);
+                JsonNode res = Utility.jsonNodeFromStr(body);
                 if (res != null) {
                     return res;
                 }else {
@@ -197,7 +197,7 @@ public class HttpHandler {
 
         } catch (Exception e) {
             String body = e.getMessage().substring(e.getMessage().indexOf("{"));
-            JsonNode res = ConvertTo.jsonNodeFromStr(body);
+            JsonNode res = Utility.jsonNodeFromStr(body);
             if (res != null) {
                 return res;
             }else {

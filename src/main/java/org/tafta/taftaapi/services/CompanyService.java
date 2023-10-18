@@ -19,139 +19,181 @@ import java.util.Map;
 @Service
 public class CompanyService {
     @Autowired
-    private DBFunctionImpl dbFunction;
+    DBFunctionImpl dbFunction;
 
     public Map<String, Object> createCompany(Map<String, Object> companyParams){
-        List<Map<String, Object>> createCompanyResponse = dbFunction.createCompany(companyParams);
+        Map<String, Object> response = new HashMap<>();
 
-        if(createCompanyResponse != null && createCompanyResponse.size() > 0){
-            return new HashMap<>() {{
-                put("response_code", "201");
-                put("description", "Success");
-                put("data", createCompanyResponse);
-            }};
-        }else{
-            return new HashMap<>() {{
-                put("response_code", "200");
-                put("description", "Record not updated");
-                put("data", null);
-            }};
-        }
-    }
-    public Map<String, Object> updateCompany(Map<String, Object> companyParams, String companyId){
-        Map<String, Object> companyResponse = dbFunction.searchCompanyById(companyId);
+        try {
+            Map<String, Object> createCompanyResponse = dbFunction.createCompany(companyParams);
 
-        if (companyResponse != null) {
-            companyResponse.put("id", companyId);
-
-            List<Map<String, Object>> updateCompanyResponse = dbFunction.updateCompany(companyParams);
-
-            if(updateCompanyResponse != null){
-                if(updateCompanyResponse.size() > 0){
-                    return new HashMap<>() {{
-                        put("response_code", "201");
-                        put("description", "Success");
-                        put("data", updateCompanyResponse);
-                    }};
-                }else{
-                    return new HashMap<>() {{
-                        put("response_code", "400");
-                        put("description", "Unrecognized status");
-                        put("data", null);
-                    }};
-                }
+            if(createCompanyResponse != null && !createCompanyResponse.isEmpty()){
+                response.put("response_code", "201");
+                response.put("response_description", "Success");
+                response.put("response_data", createCompanyResponse);
             }else{
-                return new HashMap<>() {{
-                    put("response_code", "200");
-                    put("description", "Record not updated");
-                    put("data", null);
-                }};
+                response.put("response_code", "200");
+                response.put("response_description", "Record not updated");
+                response.put("response_data", null);
             }
-        } else {
-            return new HashMap<>() {{
-                put("response_code", "404");
-                put("description", "Company not found");
-                put("data", null);
-            }};
+        } catch (Exception e) {
+            log.error(e.getMessage());
         }
+
+        return response;
+    }
+
+    public Map<String, Object> updateCompany(Map<String, Object> companyParams, String companyId){
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            Map<String, Object> companyResponse = dbFunction.searchCompanyById(companyId);
+
+            if (companyResponse != null) {
+                companyResponse.put("id", companyId);
+
+                List<Map<String, Object>> updateCompanyResponse = dbFunction.updateCompany(companyParams);
+
+                if(updateCompanyResponse != null){
+                    if(!updateCompanyResponse.isEmpty()){
+                        response.put("response_code", "201");
+                        response.put("response_description", "Success");
+                        response.put("response_data", updateCompanyResponse);
+                    }else{
+                        response.put("response_code", "400");
+                        response.put("response_description", "Unrecognized status");
+                        response.put("response_data", null);
+                    }
+                }else{
+                    response.put("response_code", "200");
+                    response.put("response_description", "Record not updated");
+                    response.put("response_data", null);
+                }
+            } else {
+                response.put("response_code", "404");
+                response.put("response_description", "Company not found");
+                response.put("response_data", null);
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage());
+
+            response.put("response_code", "500");
+            response.put("response_description", "Internal error");
+            response.put("response_data", null);
+        }
+
+        return response;
     }
     public Map<String, Object> searchCompanies(Map<String, Object> searchMap){
-        List<Map<String, Object>> searchCompaniesResponse = dbFunction.searchCompanies(searchMap);
+        Map<String, Object> response = new HashMap<>();
 
-        if(searchCompaniesResponse != null){
-            return new HashMap<>() {{
-                put("response_code", "200");
-                put("description", "Success");
-                put("data", searchCompaniesResponse);
-            }};
-        }else{
-            return new HashMap<>() {{
-                put("response_code", "404");
-                put("description", "No company found");
-                put("data", null);
-            }};
-        }
-    }
-    public Map<String, Object> listAllCompanies(Map<String, Object> queryParams){
-        List<Map<String, Object>> listAllCompaniesResponse = dbFunction.listAllCompanies(queryParams);
+        try {
+            List<Map<String, Object>> searchCompaniesResponse = dbFunction.searchCompanies(searchMap);
 
-        if(listAllCompaniesResponse != null){
-            return new HashMap<>() {{
-                put("response_code", "200");
-                put("description", "Success");
-                put("data", listAllCompaniesResponse);
-                put("page_size", listAllCompaniesResponse.size());
-            }};
-        }else{
-            return new HashMap<>() {{
-                put("response_code", "404");
-                put("description", "No company found");
-                put("data", null);
-            }};
-        }
-    }
-    public Map<String, Object> searchCompanyById(String id){
-        Map<String, Object> searchCompanyResponse = dbFunction.searchCompanyById(id);
-
-        if(searchCompanyResponse != null){
-            return new HashMap<>() {{
-                put("response_code", "200");
-                put("description", "Success");
-                put("data", searchCompanyResponse);
-            }};
-        }else{
-            return new HashMap<>() {{
-                put("response_code", "404");
-                put("description", "No company found");
-                put("data", null);
-            }};
-        }
-    }
-    public Map<String, Object> deleteCompany(String id){
-        Map<String, Object> searchCompanyResponse = dbFunction.searchCompanyById(id);
-
-        if(searchCompanyResponse != null){
-            Map<String, Object> deleteCompanyResponse = dbFunction.deleteCompany(id);
-
-            if(deleteCompanyResponse != null){
-                return new HashMap<>() {{
-                    put("response_code", "200");
-                    put("description", "Success");
-                    put("data", null);
-                }};
+            if(searchCompaniesResponse != null){
+                response.put("response_code", "200");
+                response.put("response_description", "Success");
+                response.put("response_data", searchCompaniesResponse);
             }else{
-                return new HashMap<>() {{
-                    put("response_code", "200");
-                    put("description", "Company not deleted");
-                    put("data", null);
-                }};
+                response.put("response_code", "404");
+                response.put("response_description", "No company found");
+                response.put("response_data", null);
             }
-        }else{
-            return new HashMap<>() {{
-                put("response_code", "200");
-                put("description", "Company not found");
-                put("data", null);
-            }};
+        } catch (Exception e) {
+            log.error(e.getMessage());
+
+            response.put("response_code", "500");
+            response.put("response_description", "Internal error");
+            response.put("response_data", null);
         }
+
+        return response;
+    }
+
+    public Map<String, Object> listAllCompanies(Map<String, Object> queryParams){
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            List<Map<String, Object>> listAllCompaniesResponse = dbFunction.listAllCompanies(queryParams);
+
+            if(listAllCompaniesResponse != null){
+                response.put("response_code", "200");
+                response.put("response_description", "Success");
+                response.put("response_data", listAllCompaniesResponse);
+                response.put("page_size", listAllCompaniesResponse.size());
+            }else{
+                response.put("response_code", "404");
+                response.put("response_description", "No company found");
+                response.put("response_data", null);
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage());
+
+            response.put("response_code", "500");
+            response.put("response_description", "Internal error");
+            response.put("response_data", null);
+        }
+
+        return response;
+    }
+
+    public Map<String, Object> searchCompanyById(String id){
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            Map<String, Object> searchCompanyResponse = dbFunction.searchCompanyById(id);
+
+            if(searchCompanyResponse != null){
+                response.put("response_code", "200");
+                response.put("response_description", "Success");
+                response.put("response_data", searchCompanyResponse);
+            }else{
+                response.put("response_code", "404");
+                response.put("response_description", "No company found");
+                response.put("response_data", null);
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage());
+
+            response.put("response_code", "500");
+            response.put("response_description", "Internal error");
+            response.put("response_data", null);
+        }
+
+        return response;
+    }
+
+    public Map<String, Object> deleteCompany(String id){
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            Map<String, Object> searchCompanyResponse = dbFunction.searchCompanyById(id);
+
+            if(searchCompanyResponse != null){
+                Map<String, Object> deleteCompanyResponse = dbFunction.deleteCompany(id);
+
+                if(deleteCompanyResponse != null){
+                    response.put("response_code", "200");
+                    response.put("response_description", "Success");
+                    response.put("response_data", deleteCompanyResponse.get("id"));
+                }else{
+                    response.put("response_code", "200");
+                    response.put("response_description", "Company not deleted");
+                    response.put("response_data", null);
+                }
+            }else{
+                response.put("response_code", "200");
+                response.put("response_description", "Company not found");
+                response.put("response_data", null);
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage());
+
+            response.put("response_code", "500");
+            response.put("response_description", "Internal error");
+            response.put("response_data", null);
+        }
+
+        return response;
     }
 }

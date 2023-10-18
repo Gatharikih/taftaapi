@@ -32,8 +32,8 @@ public class PermissionService {
                 response.put("response_description", "Success");
                 response.put("response_data", createPermissionResponse);
             }else{
-                response.put("response_code", "200");
-                response.put("response_description", "Record not updated");
+                response.put("response_code", "400");
+                response.put("response_description", "Permission not created");
                 response.put("response_data", null);
             }
         } catch (Exception e) {
@@ -75,8 +75,8 @@ public class PermissionService {
                         response.put("response_data", null);
                     }
                 }else{
-                    response.put("response_code", "200");
-                    response.put("response_description", "Record not updated");
+                    response.put("response_code", "400");
+                    response.put("response_description", "Permission not updated");
                     response.put("response_data", null);
                 }
             } else {
@@ -153,7 +153,7 @@ public class PermissionService {
                     response.put("response_description", "Success");
                     response.put("response_data", deletePermissionResponse.get("id"));
                 }else{
-                    response.put("response_code", "200");
+                    response.put("response_code", "400");
                     response.put("response_description", "Permission not deleted");
                     response.put("response_data", null);
                 }

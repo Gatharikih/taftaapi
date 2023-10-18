@@ -22,112 +22,113 @@ public class CompanyController {
     @Autowired
     CompanyService companyService;
     @Autowired
-    private DataValidation dataValidation;
+    DataValidation dataValidation;
 
-    @RequestMapping(value ="/api/v1/companies/company/{company_id}", method = RequestMethod.GET)
+    @RequestMapping(value ="/companies/{company_id}", method = RequestMethod.GET)
     public ResponseEntity<Object> getCompany(@PathVariable("company_id") String companyId) {
+        Map<String, Object> searchCompanyResponse = new HashMap<>();
+
         try {
             if (!companyId.trim().isEmpty()) {
-                Map<String, Object> searchCompanyResponse = companyService.searchCompanyById(companyId.trim());
-
-                return ResponseEntity.status(Integer.parseInt(searchCompanyResponse.get("response_code").toString())).body(searchCompanyResponse);
+                searchCompanyResponse = companyService.searchCompanyById(companyId.trim());
             } else {
-                return ResponseEntity.status(404).body(new HashMap<>() {{
-                    put("response_code", "404");
-                    put("description", "Success");
-                    put("data", null);
-                }});
+                searchCompanyResponse.put("response_code", "404");
+                searchCompanyResponse.put("response_description", "Success");
+                searchCompanyResponse.put("response_data", null);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
 
-            return ResponseEntity.status(500).body(new HashMap<>() {{
-                put("response_code", "500");
-                put("description", "Internal error occurred");
-                put("data", null);
-            }});
+            searchCompanyResponse.put("response_code", "500");
+            searchCompanyResponse.put("response_description", "Internal error occurred");
+            searchCompanyResponse.put("response_data", null);
         }
+
+        return ResponseEntity
+                .status(Integer.parseInt(String.valueOf(searchCompanyResponse.get("response_code"))))
+                .body(searchCompanyResponse);
     }
 
-    @RequestMapping(value ="/api/v1/companies", method = RequestMethod.GET)
-    public ResponseEntity<Object> searchCompanies(@RequestParam("company_email") Optional<String> companyEmail, @RequestParam("company_name") Optional<String> companyName,
-                                                  @RequestParam("contact_person") Optional<String> contactPerson) {
+    @RequestMapping(value ="/companies", method = RequestMethod.GET)
+    public ResponseEntity<Object> searchCompanies(@RequestParam(value = "company_email", required = false) String companyEmail,
+                                                  @RequestParam(value = "company_name", required = false) String companyName,
+                                                  @RequestParam(value = "contact_person", required = false) String contactPerson) {
+        Map<String, Object> searchCompaniesResponse = new HashMap<>();
+
         try {
-            Map<String, Object> searchMap = new HashMap<>();
+            Map<String, Object> searchMap = new HashMap<>(){{
+                put("company_email", companyEmail);
+                put("company_name", companyName);
+                put("contact_person", contactPerson);
+            }};
 
-            companyEmail.ifPresent(s -> searchMap.put("company_email", s));
-            companyName.ifPresent(s -> searchMap.put("company_name", s));
-            contactPerson.ifPresent(s -> searchMap.put("contact_person", s));
-
-            Map<String, Object> searchCompaniesResponse = companyService.searchCompanies(searchMap);
-
-            return ResponseEntity.status(Integer.parseInt(searchCompaniesResponse.get("response_code").toString())).body(searchCompaniesResponse);
+            searchCompaniesResponse = companyService.searchCompanies(searchMap);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
 
-            return ResponseEntity.status(500).body(new HashMap<>() {{
-                put("response_code", "500");
-                put("description", "Internal error occurred");
-                put("data", null);
-            }});
+            searchCompaniesResponse.put("response_code", "500");
+            searchCompaniesResponse.put("response_description", "Internal error occurred");
+            searchCompaniesResponse.put("response_data", null);
         }
+
+        return ResponseEntity
+                .status(Integer.parseInt(String.valueOf(searchCompaniesResponse.get("response_code"))))
+                .body(searchCompaniesResponse);
     }
 
-    @RequestMapping(value ="/api/v1/companies/list", method = RequestMethod.GET)
-    public ResponseEntity<Object> listAllCompanies(@RequestParam("page_number") Optional<String> pageNumber, @RequestParam("status") Optional<String> status) {
+    @RequestMapping(value ="/companies/list", method = RequestMethod.GET)
+    public ResponseEntity<Object> listAllCompanies(@RequestParam(value = "page_number", required = false) String pageNumber,
+                                                   @RequestParam(value = "status", required = false)  String status) {
+        Map<String, Object> listAllCompaniesResponse = new HashMap<>();
+
         try {
-            Map<String, Object> searchMap = new HashMap<>();
+            Map<String, Object> searchMap = new HashMap<>(){{
+                put("page_number",pageNumber);
+                put("status", status);
+            }};
 
-            pageNumber.ifPresent(s -> searchMap.put("page_number", s));
-            status.ifPresent(s -> searchMap.put("status", s));
-
-            Map<String, Object> listAllCompaniesResponse = companyService.listAllCompanies(searchMap);
-
-            return ResponseEntity.status(Integer.parseInt(listAllCompaniesResponse.get("response_code").toString())).body(listAllCompaniesResponse);
+            listAllCompaniesResponse = companyService.listAllCompanies(searchMap);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
 
-            return ResponseEntity.status(500).body(new HashMap<>() {{
-                put("response_code", "500");
-                put("description", "Internal error occurred");
-                put("data", null);
-            }});
+            listAllCompaniesResponse.put("response_code", "500");
+            listAllCompaniesResponse.put("response_description", "Internal error occurred");
+            listAllCompaniesResponse.put("response_data", null);
         }
+
+        return ResponseEntity
+                .status(Integer.parseInt(String.valueOf(listAllCompaniesResponse.get("response_code"))))
+                .body(listAllCompaniesResponse);
     }
 
-    @RequestMapping(value ="/api/v1/companies/{company_id}", method = RequestMethod.PUT)
+    @RequestMapping(value ="/companies/{company_id}", method = RequestMethod.PUT)
     public ResponseEntity<Object> updateCompany(@PathVariable("company_id") String companyId, @RequestBody Map<String, Object> body) {
-        Map<String, Object> response = new HashMap<>();
+        Map<String, Object> updateCompanyResponse = new HashMap<>();
 
         try {
-            Map<String, Object> updateCompanyResponse = companyService.updateCompany(body, companyId);
-
-            return ResponseEntity.status(Integer.parseInt(updateCompanyResponse.get("response_code").toString())).body(updateCompanyResponse);
+            updateCompanyResponse = companyService.updateCompany(body, companyId);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
 
             if (e.getCause() != null || e.getCause().getMessage().contains("duplicate key") || e.getCause().getMessage().contains("unique constraint")){
-                response.put("response_code", "400");
-                response.put("description", "Failed");
-                response.put("errors", List.of(new HashMap<>() {{
-                    put("description", "Record already exists");
-                }}));
+                updateCompanyResponse.put("response_code", "400");
+                updateCompanyResponse.put("response_description", "Failed");
+                updateCompanyResponse.put("errors", "Record already exists");
             }else {
-                response.put("response_code", "500");
-                response.put("description", "Failed");
-                response.put("errors", List.of(new HashMap<>() {{
-                    put("description", "Internal error occurred");
-                }}));
+                updateCompanyResponse.put("response_code", "500");
+                updateCompanyResponse.put("response_description", "Failed");
+                updateCompanyResponse.put("errors", "Internal error occurred");
             }
-
-            return ResponseEntity.status(Integer.parseInt(response.get("response_code").toString()))
-                    .body(response);
         }
+
+        return ResponseEntity
+                .status(Integer.parseInt(String.valueOf(updateCompanyResponse.get("response_code"))))
+                .body(updateCompanyResponse);
     }
 
-    @RequestMapping(value ="/api/v1/companies", method = RequestMethod.POST)
+    @RequestMapping(value ="/companies", method = RequestMethod.POST)
     public ResponseEntity<Object> createCompany(@RequestBody Map<String, Object> body) {
-        Map<String, Object> response = new HashMap<>();
+        Map<String, Object> createCompanyResponse = new HashMap<>();
 
         try {
             List<String> requiredFields = new ArrayList<>();
@@ -140,62 +141,54 @@ public class CompanyController {
             Map<String, Object> dataValidationResult = dataValidation.areFieldsValid(body, requiredFields);
 
             if (Boolean.parseBoolean(dataValidationResult.get("valid").toString())) {
-                Map<String, Object> createCompanyResponse = companyService.createCompany(body);
-
-                return ResponseEntity.status(Integer.parseInt(createCompanyResponse.get("response_code").toString())).body(createCompanyResponse);
+                createCompanyResponse = companyService.createCompany(body);
             } else {
-                Map validationErrorMap = (Map) dataValidationResult.get("errors");
-
-                response.put("response_code", "400");
-                response.put("description", "Failed");
-                response.put("errors", List.of(validationErrorMap.get("message")));
-
-                return ResponseEntity.status(400).body(response);
+                createCompanyResponse.put("response_code", "400");
+                createCompanyResponse.put("response_description", "Failed");
+                createCompanyResponse.put("errors", dataValidationResult.get("errors"));
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
 
             if (e.getCause() != null || e.getCause().getMessage().contains("duplicate key") || e.getCause().getMessage().contains("unique constraint")){
-                response.put("response_code", "400");
-                response.put("description", "Failed");
-                response.put("errors", List.of(new HashMap<>() {{
-                    put("description", "Property already exists");
-                }}));
+                createCompanyResponse.put("response_code", "400");
+                createCompanyResponse.put("response_description", "Failed");
+                createCompanyResponse.put("errors", "Property already exists");
             }else {
-                response.put("response_code", "500");
-                response.put("description", "Failed");
-                response.put("errors", List.of(new HashMap<>() {{
-                    put("description", "Internal error occurred");
-                }}));
+                createCompanyResponse.put("response_code", "500");
+                createCompanyResponse.put("response_description", "Failed");
+                createCompanyResponse.put("errors", "Internal error occurred");
             }
-
-            return ResponseEntity.status(Integer.parseInt(response.get("response_code").toString()))
-                    .body(response);
         }
+
+        return ResponseEntity
+                .status(Integer.parseInt(String.valueOf(createCompanyResponse.get("response_code"))))
+                .body(createCompanyResponse);
     }
 
-    @RequestMapping(value ="/api/v1/companies/{company_id}", method = RequestMethod.DELETE)
+    @RequestMapping(value ="/companies/{company_id}", method = RequestMethod.DELETE)
     public ResponseEntity<Object> deleteCompany(@PathVariable("company_id") String companyId) {
+        Map<String, Object> deleteCompanyResponse = new HashMap<>();
+
         try {
             if (!companyId.trim().equalsIgnoreCase("")) {
-                Map<String, Object> deleteCompanyResponse = companyService.deleteCompany(companyId.trim());
-
-                return ResponseEntity.status(Integer.parseInt(deleteCompanyResponse.get("response_code").toString())).body(deleteCompanyResponse);
+                deleteCompanyResponse = companyService.deleteCompany(companyId.trim());
             } else {
-                return ResponseEntity.status(404).body(new HashMap<>() {{
-                    put("response_code", "404");
-                    put("description", "Success");
-                    put("data", null);
-                }});
+                deleteCompanyResponse.put("response_code", "404");
+                deleteCompanyResponse.put("response_description", "Success");
+                deleteCompanyResponse.put("response_data", null);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
 
-            return ResponseEntity.status(500).body(new HashMap<>() {{
-                put("response_code", "500");
-                put("description", "Internal error occurred");
-                put("data", null);
-            }});
+            deleteCompanyResponse.put("response_code", "500");
+            deleteCompanyResponse.put("response_description", "Internal error occurred");
+            deleteCompanyResponse.put("response_data", null);
         }
+
+
+        return ResponseEntity
+                .status(Integer.parseInt(String.valueOf(deleteCompanyResponse.get("response_code"))))
+                .body(deleteCompanyResponse);
     }
 }
