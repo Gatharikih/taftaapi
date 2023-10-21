@@ -3,21 +3,33 @@ package org.tafta.taftaapi.security;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.tafta.taftaapi.utility.Utility;
 
 /**
  * @author Gathariki Ngigi
  * Created on July 24, 2023.
  * Time 1456h
+ *
+ * <p>
+ * The class provides configurations on how different API endpoints will be authorized & authenticated
+ * <b>: Configuring SecurityFilterChain</b>
+ * <p> Provide Description on how each end point should be handled in term of security</p>
+ * @EnableMethodSecurity class level tag will allow method level access control Based on Role (RBAC)
+ * This helps to determine what user can or cannot access (Authorization) having provided the right credential
+ * (Authentication)
  */
 
 @Configuration
+@EnableMethodSecurity(jsr250Enabled = true)
+@EnableWebMvc
 @EnableWebSecurity
 public class WebSecurityConfiguration {
     @Autowired

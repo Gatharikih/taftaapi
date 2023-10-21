@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import org.tafta.taftaapi.services.CompanyService;
 import org.tafta.taftaapi.services.DataValidation;
 import org.tafta.taftaapi.services.PropertyService;
+import org.tafta.taftaapi.utility.Utility;
 
 import java.util.*;
 
@@ -29,51 +30,24 @@ public class CompanyController {
         Map<String, Object> searchCompanyResponse = new HashMap<>();
 
         try {
-            if (!companyId.trim().isEmpty()) {
+            if (!companyId.isEmpty()) {
                 searchCompanyResponse = companyService.searchCompanyById(companyId.trim());
             } else {
-                searchCompanyResponse.put("response_code", "404");
-                searchCompanyResponse.put("response_description", "Success");
+                searchCompanyResponse.put("response_code", "400");
+                searchCompanyResponse.put("response_description", "Company id cannot be null");
                 searchCompanyResponse.put("response_data", null);
             }
         } catch (Exception e) {
             log.error(e.getMessage());
 
             searchCompanyResponse.put("response_code", "500");
-            searchCompanyResponse.put("response_description", "Internal error occurred");
+            searchCompanyResponse.put("response_description", "Internal error");
             searchCompanyResponse.put("response_data", null);
         }
 
         return ResponseEntity
                 .status(Integer.parseInt(String.valueOf(searchCompanyResponse.get("response_code"))))
                 .body(searchCompanyResponse);
-    }
-
-    @RequestMapping(value ="/companies", method = RequestMethod.GET)
-    public ResponseEntity<Object> searchCompanies(@RequestParam(value = "company_email", required = false) String companyEmail,
-                                                  @RequestParam(value = "company_name", required = false) String companyName,
-                                                  @RequestParam(value = "contact_person", required = false) String contactPerson) {
-        Map<String, Object> searchCompaniesResponse = new HashMap<>();
-
-        try {
-            Map<String, Object> searchMap = new HashMap<>(){{
-                put("company_email", companyEmail);
-                put("company_name", companyName);
-                put("contact_person", contactPerson);
-            }};
-
-            searchCompaniesResponse = companyService.searchCompanies(searchMap);
-        } catch (Exception e) {
-            log.error(e.getMessage());
-
-            searchCompaniesResponse.put("response_code", "500");
-            searchCompaniesResponse.put("response_description", "Internal error occurred");
-            searchCompaniesResponse.put("response_data", null);
-        }
-
-        return ResponseEntity
-                .status(Integer.parseInt(String.valueOf(searchCompaniesResponse.get("response_code"))))
-                .body(searchCompaniesResponse);
     }
 
     @RequestMapping(value ="/companies/list", method = RequestMethod.GET)
@@ -87,12 +61,14 @@ public class CompanyController {
                 put("status", status);
             }};
 
+            searchMap = Utility.cleanMap(searchMap);
+
             listAllCompaniesResponse = companyService.listAllCompanies(searchMap);
         } catch (Exception e) {
             log.error(e.getMessage());
 
             listAllCompaniesResponse.put("response_code", "500");
-            listAllCompaniesResponse.put("response_description", "Internal error occurred");
+            listAllCompaniesResponse.put("response_description", "Internal error");
             listAllCompaniesResponse.put("response_data", null);
         }
 
@@ -102,11 +78,18 @@ public class CompanyController {
     }
 
     @RequestMapping(value ="/companies/{company_id}", method = RequestMethod.PUT)
-    public ResponseEntity<Object> updateCompany(@PathVariable("company_id") String companyId, @RequestBody Map<String, Object> body) {
+    public ResponseEntity<Object> updateCompany(@PathVariable("company_id") String companyId,
+                                                @RequestBody Map<String, Object> body) {
         Map<String, Object> updateCompanyResponse = new HashMap<>();
 
         try {
-            updateCompanyResponse = companyService.updateCompany(body, companyId);
+            if (!companyId.isEmpty()) {
+                updateCompanyResponse = companyService.updateCompany(body, companyId);
+            } else {
+                updateCompanyResponse.put("response_code", "400");
+                updateCompanyResponse.put("response_description", "Company id cannot be null");
+                updateCompanyResponse.put("response_data", null);
+            }
         } catch (Exception e) {
             log.error(e.getMessage());
 
@@ -117,7 +100,7 @@ public class CompanyController {
             }else {
                 updateCompanyResponse.put("response_code", "500");
                 updateCompanyResponse.put("response_description", "Failed");
-                updateCompanyResponse.put("errors", "Internal error occurred");
+                updateCompanyResponse.put("errors", "Internal error");
             }
         }
 
@@ -157,7 +140,7 @@ public class CompanyController {
             }else {
                 createCompanyResponse.put("response_code", "500");
                 createCompanyResponse.put("response_description", "Failed");
-                createCompanyResponse.put("errors", "Internal error occurred");
+                createCompanyResponse.put("errors", "Internal error");
             }
         }
 
@@ -171,18 +154,18 @@ public class CompanyController {
         Map<String, Object> deleteCompanyResponse = new HashMap<>();
 
         try {
-            if (!companyId.trim().equalsIgnoreCase("")) {
+            if (!companyId.isEmpty()) {
                 deleteCompanyResponse = companyService.deleteCompany(companyId.trim());
             } else {
-                deleteCompanyResponse.put("response_code", "404");
-                deleteCompanyResponse.put("response_description", "Success");
+                deleteCompanyResponse.put("response_code", "400");
+                deleteCompanyResponse.put("response_description", "Company id cannot be null");
                 deleteCompanyResponse.put("response_data", null);
             }
         } catch (Exception e) {
             log.error(e.getMessage());
 
             deleteCompanyResponse.put("response_code", "500");
-            deleteCompanyResponse.put("response_description", "Internal error occurred");
+            deleteCompanyResponse.put("response_description", "Internal error");
             deleteCompanyResponse.put("response_data", null);
         }
 

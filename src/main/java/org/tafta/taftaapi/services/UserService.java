@@ -1,12 +1,14 @@
 package org.tafta.taftaapi.services;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.tafta.taftaapi.repo.DBFunctionImpl;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author Gathariki Ngigi
@@ -26,12 +28,12 @@ public class UserService {
 
         if(createUserResponse != null && !createUserResponse.isEmpty()){
             response.put("response_code", "201");
-            response.put("description", "Success");
-            response.put("data", createUserResponse);
+            response.put("response_description", "Success");
+            response.put("response_data", createUserResponse);
         }else{
             response.put("response_code", "200");
-            response.put("description", "Record not updated");
-            response.put("data", null);
+            response.put("response_description", "Record not updated");
+            response.put("response_data", null);
         }
 
         return response;
@@ -49,22 +51,22 @@ public class UserService {
             if(updateUserResponse != null){
                 if(!updateUserResponse.isEmpty()){
                     response.put("response_code", "201");
-                    response.put("description", "Success");
-                    response.put("data", updateUserResponse);
+                    response.put("response_description", "Success");
+                    response.put("response_data", updateUserResponse);
                 }else{
                     response.put("response_code", "400");
-                    response.put("description", "Unrecognized status");
-                    response.put("data", null);
+                    response.put("response_description", "Unrecognized status");
+                    response.put("response_data", null);
                 }
             }else{
                 response.put("response_code", "200");
-                response.put("description", "Record not updated");
-                response.put("data", null);
+                response.put("response_description", "Record not updated");
+                response.put("response_data", null);
             }
         } else {
             response.put("response_code", "404");
-            response.put("description", "User not found");
-            response.put("data", null);
+            response.put("response_description", "User not found");
+            response.put("response_data", null);
         }
 
         return response;
@@ -76,12 +78,12 @@ public class UserService {
 
         if(searchUserResponse != null){
             response.put("response_code", "200");
-            response.put("description", "Success");
-            response.put("data", searchUserResponse);
+            response.put("response_description", "Success");
+            response.put("response_data", searchUserResponse);
         }else{
             response.put("response_code", "404");
-            response.put("description", "User not found");
-            response.put("data", null);
+            response.put("response_description", "User not found");
+            response.put("response_data", null);
         }
 
         return response;
@@ -93,13 +95,13 @@ public class UserService {
 
         if(listAllUsersResponse != null){
             response.put("response_code", "200");
-            response.put("description", "Success");
-            response.put("data", listAllUsersResponse);
+            response.put("response_description", "Success");
+            response.put("response_data", listAllUsersResponse);
             response.put("page_size", listAllUsersResponse.size());
         }else{
             response.put("response_code", "404");
-            response.put("description", "No user found");
-            response.put("data", null);
+            response.put("response_description", "No user found");
+            response.put("response_data", null);
         }
 
         return response;
@@ -111,12 +113,12 @@ public class UserService {
 
         if(searchUserResponse != null){
             response.put("response_code", "200");
-            response.put("description", "Success");
-            response.put("data", searchUserResponse);
+            response.put("response_description", "Success");
+            response.put("response_data", searchUserResponse);
         }else{
             response.put("response_code", "404");
-            response.put("description", "User not found");
-            response.put("data", null);
+            response.put("response_description", "User not found");
+            response.put("response_data", null);
         }
 
         return response;
@@ -131,17 +133,17 @@ public class UserService {
 
             if(deleteUserResponse != null){
                 response.put("response_code", "200");
-                response.put("description", "Success");
-                response.put("data", null);
+                response.put("response_description", "Success");
+                response.put("response_data", null);
             }else{
                 response.put("response_code", "200");
-                response.put("description", "User not deleted");
-                response.put("data", null);
+                response.put("response_description", "User not deleted");
+                response.put("response_data", null);
             }
         }else{
             response.put("response_code", "200");
-            response.put("description", "User not found");
-            response.put("data", null);
+            response.put("response_description", "User not found");
+            response.put("response_data", null);
         }
 
         return response;

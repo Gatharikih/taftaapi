@@ -1,5 +1,7 @@
 package org.tafta.taftaapi.services;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,8 @@ import java.util.Map;
 public class RoleService {
     @Autowired
     DBFunctionImpl dbFunction;
+
+    ObjectMapper mapper = new ObjectMapper();
 
     public Map<String, Object> createRole(Map<String, Object> roleParams){
         Map<String, Object> response = new HashMap<>();
@@ -52,6 +56,7 @@ public class RoleService {
 
         return response;
     }
+
     public Map<String, Object> updateRole(Map<String, Object> roleParams, String roleId){
         Map<String, Object> response = new HashMap<>();
 
@@ -170,6 +175,43 @@ public class RoleService {
             response.put("response_code", "500");
             response.put("description", "Internal error");
             response.put("data", null);
+        }
+
+        return response;
+    }
+
+
+    public Map<String, Object> searchRolePermissions(String roleId){
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            Map<String, Object> thisUserRole = dbFunction.searchRoleById(roleId);
+
+            if(thisUserRole != null){
+                List<String> permissionsProvidedStr = mapper.convertValue(thisUserRole.get("permissions"), new TypeReference<>() {});
+                List<Integer> permissionsProvidedInt = permissionsProvidedStr.stream().map(Integer::parseInt).toList();
+                List<Map<String, Object>> permissionsFound = dbFunction.searchPermissions(permissionsProvidedInt);
+
+                if(permissionsFound != null && !permissionsFound.isEmpty()){
+                    response.put("response_code", "200");
+                    response.put("response_description", "Success");
+                    response.put("response_data", permissionsFound);
+                }else{
+                    response.put("response_code", "404");
+                    response.put("response_description", "User role permissions not found");
+                    response.put("response_data", null);
+                }
+            }else{
+                response.put("response_code", "404");
+                response.put("response_description", "User role not found");
+                response.put("response_data", null);
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage());
+
+            response.put("response_code", "500");
+            response.put("response_description", "Internal error");
+            response.put("response_data", null);
         }
 
         return response;

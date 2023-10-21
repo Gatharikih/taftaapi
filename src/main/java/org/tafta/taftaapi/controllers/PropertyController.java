@@ -153,7 +153,7 @@ public class PropertyController {
         Map<String, Object> createPropertyResponse = new HashMap<>();
 
         try {
-            body.put("property_id", Utility.generateRandomAlphanumeric(10));
+            body.put("property_id", "PRP_" + Utility.generateRandomAlphanumeric(10));
 
             List<String> requiredFields = new ArrayList<>(){{
                 add("county");

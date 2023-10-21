@@ -19,6 +19,7 @@ import java.util.Collection;
 public class ApiKeyAuthentication extends AbstractAuthenticationToken {
     public ApiKeyAuthentication(Collection<? extends GrantedAuthority> authorities) {
         super(authorities);
+
         setAuthenticated(true);
     }
 

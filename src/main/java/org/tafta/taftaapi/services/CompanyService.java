@@ -33,7 +33,7 @@ public class CompanyService {
                 response.put("response_data", createCompanyResponse);
             }else{
                 response.put("response_code", "200");
-                response.put("response_description", "Record not updated");
+                response.put("response_description", "Company not updated");
                 response.put("response_data", null);
             }
         } catch (Exception e) {
@@ -50,53 +50,22 @@ public class CompanyService {
             Map<String, Object> companyResponse = dbFunction.searchCompanyById(companyId);
 
             if (companyResponse != null) {
-                companyResponse.put("id", companyId);
+                companyParams.put("company_id", companyId);
 
-                List<Map<String, Object>> updateCompanyResponse = dbFunction.updateCompany(companyParams);
+                Map<String, Object> updateCompanyResponse = dbFunction.updateCompany(companyParams);
 
                 if(updateCompanyResponse != null){
-                    if(!updateCompanyResponse.isEmpty()){
-                        response.put("response_code", "201");
-                        response.put("response_description", "Success");
-                        response.put("response_data", updateCompanyResponse);
-                    }else{
-                        response.put("response_code", "400");
-                        response.put("response_description", "Unrecognized status");
-                        response.put("response_data", null);
-                    }
+                    response.put("response_code", "200");
+                    response.put("response_description", "Success");
+                    response.put("response_data", updateCompanyResponse);
                 }else{
                     response.put("response_code", "200");
-                    response.put("response_description", "Record not updated");
+                    response.put("response_description", "Company not updated");
                     response.put("response_data", null);
                 }
             } else {
                 response.put("response_code", "404");
                 response.put("response_description", "Company not found");
-                response.put("response_data", null);
-            }
-        } catch (Exception e) {
-            log.error(e.getMessage());
-
-            response.put("response_code", "500");
-            response.put("response_description", "Internal error");
-            response.put("response_data", null);
-        }
-
-        return response;
-    }
-    public Map<String, Object> searchCompanies(Map<String, Object> searchMap){
-        Map<String, Object> response = new HashMap<>();
-
-        try {
-            List<Map<String, Object>> searchCompaniesResponse = dbFunction.searchCompanies(searchMap);
-
-            if(searchCompaniesResponse != null){
-                response.put("response_code", "200");
-                response.put("response_description", "Success");
-                response.put("response_data", searchCompaniesResponse);
-            }else{
-                response.put("response_code", "404");
-                response.put("response_description", "No company found");
                 response.put("response_data", null);
             }
         } catch (Exception e) {
@@ -144,6 +113,10 @@ public class CompanyService {
             Map<String, Object> searchCompanyResponse = dbFunction.searchCompanyById(id);
 
             if(searchCompanyResponse != null){
+                searchCompanyResponse.remove("password");
+                searchCompanyResponse.remove("api_password");
+                searchCompanyResponse.remove("api_key");
+
                 response.put("response_code", "200");
                 response.put("response_description", "Success");
                 response.put("response_data", searchCompanyResponse);
@@ -182,7 +155,7 @@ public class CompanyService {
                     response.put("response_data", null);
                 }
             }else{
-                response.put("response_code", "200");
+                response.put("response_code", "404");
                 response.put("response_description", "Company not found");
                 response.put("response_data", null);
             }

@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 import org.tafta.taftaapi.config.PropConfiguration;
@@ -219,9 +220,7 @@ public class Utility {
     public static Object removeFieldsFromMap(Map<String, Object> mapToModify, List<String> fieldsToPurge) {
         try {
             if (mapToModify != null && !mapToModify.isEmpty() && fieldsToPurge != null && !fieldsToPurge.isEmpty()) {
-                mapToModify.forEach((key, value) ->{
-                    if(fieldsToPurge.contains(key)) mapToModify.remove(key);
-                });
+                mapToModify.entrySet().removeIf(stringObjectEntry -> fieldsToPurge.contains(stringObjectEntry.getKey()));
             }
         } catch (Exception e) {
             log.error("removeFieldsFromMap: " + e.getMessage());

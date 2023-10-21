@@ -17,7 +17,6 @@ CREATE TABLE companies (
 	created_at timestamp(6) NULL,
 	updated_at timestamp(6) NULL,
 	deleted_at timestamp(6) NULL,
-	published_at varchar NULL,
 	api_password varchar NULL,
 	api_key varchar NULL,
 	api_access bool NULL DEFAULT false,
@@ -177,7 +176,7 @@ CREATE TABLE users (
 	updated_at timestamp(6) NOT NULL DEFAULT now(),
 	deleted_at timestamp(6) NULL,
 	reset_password bool NULL DEFAULT true,
-	api_password varchar NULL,
+	api_key varchar NULL,
 	api_access bool NULL DEFAULT false,
 	CONSTRAINT users_email_unique UNIQUE (email),
 	CONSTRAINT users_pkey PRIMARY KEY (id)

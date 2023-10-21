@@ -33,17 +33,17 @@ public class UserController {
             } else {
                 return ResponseEntity.status(404).body(new HashMap<>() {{
                     put("response_code", "404");
-                    put("description", "Success");
-                    put("data", null);
+                    put("response_description", "Success");
+                    put("response_data", null);
                 }});
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
 
             return ResponseEntity.status(500).body(new HashMap<>() {{
                 put("response_code", "500");
-                put("description", "Internal error occurred");
-                put("data", null);
+                put("response_description", "Internal error occurred");
+                put("response_data", null);
             }});
         }
     }
@@ -58,17 +58,17 @@ public class UserController {
             } else {
                 return ResponseEntity.status(404).body(new HashMap<>() {{
                     put("response_code", "404");
-                    put("description", "Success");
-                    put("data", null);
+                    put("response_description", "Success");
+                    put("response_data", null);
                 }});
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
 
             return ResponseEntity.status(500).body(new HashMap<>() {{
                 put("response_code", "500");
-                put("description", "Internal error occurred");
-                put("data", null);
+                put("response_description", "Internal error occurred");
+                put("response_data", null);
             }});
         }
     }
@@ -84,12 +84,12 @@ public class UserController {
 
             return ResponseEntity.status(Integer.parseInt(listAllUsersResponse.get("response_code").toString())).body(listAllUsersResponse);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
 
             return ResponseEntity.status(500).body(new HashMap<>() {{
                 put("response_code", "500");
-                put("description", "Internal error occurred");
-                put("data", null);
+                put("response_description", "Internal error occurred");
+                put("response_data", null);
             }});
         }
     }
@@ -104,21 +104,21 @@ public class UserController {
             return ResponseEntity.status(Integer.parseInt(updateUserResponse.get("response_code").toString()))
                     .body(updateUserResponse);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
 
             log.error("error here");
 
             if (e.getCause() != null || e.getCause().getMessage().contains("duplicate key") || e.getCause().getMessage().contains("unique constraint")){
                 response.put("response_code", "400");
-                response.put("description", "Failed");
+                response.put("response_description", "Failed");
                 response.put("errors", List.of(new HashMap<>() {{
-                    put("description", "Email/phone number already exists");
+                    put("response_description", "Email/phone number already exists");
                 }}));
             }else {
                 response.put("response_code", "500");
-                response.put("description", "Failed");
+                response.put("response_description", "Failed");
                 response.put("errors", List.of(new HashMap<>() {{
-                    put("description", "Internal error occurred");
+                    put("response_description", "Internal error occurred");
                 }}));
             }
 
@@ -149,25 +149,25 @@ public class UserController {
                 Map validationErrorMap = (Map) dataValidationResult.get("errors");
 
                 response.put("response_code", "400");
-                response.put("description", "Failed");
+                response.put("response_description", "Failed");
                 response.put("errors", List.of(validationErrorMap.get("message")));
 
                 return ResponseEntity.status(400).body(response);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
 
             if (e.getCause() != null || e.getCause().getMessage().contains("duplicate key") || e.getCause().getMessage().contains("unique constraint")){
                 response.put("response_code", "400");
-                response.put("description", "Failed");
+                response.put("response_description", "Failed");
                 response.put("errors", List.of(new HashMap<>() {{
-                    put("description", "Email/phone number already exists");
+                    put("response_description", "Email/phone number already exists");
                 }}));
             }else {
                 response.put("response_code", "500");
-                response.put("description", "Failed");
+                response.put("response_description", "Failed");
                 response.put("errors", List.of(new HashMap<>() {{
-                    put("description", "Internal error occurred");
+                    put("response_description", "Internal error occurred");
                 }}));
             }
 
@@ -186,17 +186,17 @@ public class UserController {
             } else {
                 return ResponseEntity.status(404).body(new HashMap<>() {{
                     put("response_code", "404");
-                    put("description", "Success");
-                    put("data", null);
+                    put("response_description", "Success");
+                    put("response_data", null);
                 }});
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
 
             return ResponseEntity.status(500).body(new HashMap<>() {{
                 put("response_code", "500");
-                put("description", "Internal error occurred");
-                put("data", null);
+                put("response_description", "Internal error occurred");
+                put("response_data", null);
             }});
         }
     }
