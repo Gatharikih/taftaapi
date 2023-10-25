@@ -58,7 +58,7 @@ public class DataValidation {
             if (fieldsMap != null) {
                 // specific field to be checked
                 for (String eachRequiredField : requiredFields) {
-                    log.info(eachRequiredField + " : " + fieldsMap.get(eachRequiredField));
+//                    log.info(eachRequiredField + " : " + fieldsMap.get(eachRequiredField));
 
                     String firstCharOfFirstFieldName;
                     String restOfCharsOfFirstFieldName;

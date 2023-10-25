@@ -132,57 +132,47 @@ public class DBFunctionImpl {
     /**-------------------- USERS -------------------------*/
 
     // <editor-fold default-state="collapsed" desc="createUser(Map<String, Object> entryParams)">
-    public List<Map<String, Object>> createUser(Map<String, Object> entryParams) {
-        LinkedHashMap<String, Object> params = new LinkedHashMap<>();
+    public Map<String, Object> createUser(Map<String, Object> entryParams) {
+        Map<String, Object> result = new HashMap<>();
 
-        if(entryParams.get("company_id") != null){
-            params.put("company_id", entryParams.get("company_id"));
-        }
-        params.put("id", Optional.ofNullable(entryParams.get("id"))
-                .orElse(!getUserRoleId("user").isEmpty() ?
-                        Integer.parseInt(String.valueOf(getUserRoleId("user").get(0).get("id"))) : 5));
+        try {
+            LocalDateTime now = LocalDateTime.now();
+            LinkedHashMap<String, Object> params = new LinkedHashMap<>(){{
+                put("company_id", entryParams.get("company"));
+                put("role_id", entryParams.get("role"));
+                put("fullname", entryParams.get("fullname"));
+                put("email", entryParams.get("email"));
+                put("password", entryParams.get("password"));
+                put("msisdn", entryParams.get("msisdn"));
+                put("reset_password", Boolean.parseBoolean(String.valueOf(entryParams.getOrDefault("reset_password", "true"))));
+                put("status", Status.getStatusType(String.valueOf(entryParams.getOrDefault("status", "active"))));
+                put("created_at", now);
+                put("updated_at", now);
+            }};
 
-        if(entryParams.get("fullname") != null){
-            params.put("fullname", entryParams.get("fullname"));
-        }
+            params = Utility.cleanMap(params);
 
-        if(entryParams.get("email") != null){
-            params.put("email", entryParams.get("email"));
-        }
+            String table = "users";
 
-        if(entryParams.get("password") != null){
-            params.put("password", entryParams.get("password"));
-        }
+            String sql = Models.InsertString(table, params);
+            sql += " returning *";
 
-        if(entryParams.get("msisdn") != null){
-            params.put("msisdn", entryParams.get("msisdn"));
-        }
+            List<Map<String, Object>> results = NamedBaseExecute(sql, params, null, new MapResultHandler());
 
-        if(entryParams.get("reset_password") != null){
-            params.put("reset_password", Optional.ofNullable(entryParams.get("reset_password")).orElse(true));
-        }
+            if(results != null && !results.isEmpty()){
+                result = results.get(0);
+                result.put("created", "true");
 
-        if(entryParams.get("status") != null){
-            try {
-                params.put("status", Optional.of(Status.getStatusType(String.valueOf(entryParams.get("status"))))
-                        .orElse(Status.getStatusType("active")));
-            } catch (Exception e) {
-                log.error(e.getMessage());
+                return result;
             }
-        }
+        } catch (Exception e) {
+            log.error(e.getMessage());
 
-        params = Utility.cleanMap(params);
+            if (e.getMessage().contains("duplicate key") || e.getMessage().contains("violates unique")){
+                result.put("created", "false");
 
-        String sql;
-        String table = "users";
-
-        sql = Models.InsertString(table, params);
-        sql += " returning *";
-
-        List<Map<String, Object>> results = NamedBaseExecute(sql, params, null, new MapResultHandler());
-
-        if(!results.isEmpty()){
-            return results;
+                return result;
+            }
         }
 
         return null;
@@ -190,66 +180,42 @@ public class DBFunctionImpl {
     // </editor-fold>
     //
     // <editor-fold default-state="collapsed" desc="updateUser(Map<String, Object> entryParams)">
-    public List<Map<String, Object>> updateUser(Map<String, Object> entryParams) {
-        LinkedHashMap<String, Object> params = new LinkedHashMap<>();
+    public Map<String, Object> updateUser(Map<String, Object> entryParams) {
+        try {
+            LocalDateTime now = LocalDateTime.now();
+            LinkedHashMap<String, Object> params = new LinkedHashMap<>(){{
+                put("company_id", entryParams.get("company"));
+                put("role_id", entryParams.get("role"));
+                put("fullname", entryParams.get("fullname"));
+                put("password", entryParams.get("password"));
+                put("auth_channel", entryParams.get("auth_channel"));
+                put("msisdn", entryParams.get("msisdn"));
+                put("reset_password", Boolean.parseBoolean(String.valueOf(entryParams.getOrDefault("reset_password", "true"))));
+                put("status", Status.getStatusType(String.valueOf(entryParams.getOrDefault("status", "active"))));
+                put("api_key", entryParams.get("api_key"));
+                put("api_access", entryParams.get("api_access"));
+                put("created_at", now);
+                put("updated_at", now);
+            }};
 
-        if(entryParams.get("company_id") != null){
-            params.put("company_id", entryParams.get("company_id"));
-        }
-        params.put("id", Optional.ofNullable(entryParams.get("id"))
-                .orElse(!getUserRoleId("user").isEmpty() ?
-                        Integer.parseInt(String.valueOf(getUserRoleId("user").get(0).get("id"))) : 5));
+            params = Utility.cleanMap(params);
 
-        if(entryParams.get("fullname") != null){
-            params.put("fullname", entryParams.get("fullname"));
-        }
+            LinkedHashMap<String, Object> where_params = new LinkedHashMap<>(){{
+                put("id", Integer.parseInt(String.valueOf(entryParams.get("id"))));
+            }};
 
-        if(entryParams.get("email") != null){
-            params.put("email", entryParams.get("email"));
-        }
+            String table = "users";
 
-        if(entryParams.get("password") != null){
-            params.put("password", entryParams.get("password"));
-        }
+            String sql = Models.UpdateString(table, params, where_params);
+            sql += " returning *";
 
-        if(entryParams.get("msisdn") != null){
-            params.put("msisdn", entryParams.get("msisdn"));
-        }
+            List<Map<String, Object>> results = NamedBaseExecute(sql, params, where_params, new MapResultHandler());
 
-        if(entryParams.get("reset_password") != null){
-            params.put("reset_password", Optional.ofNullable(entryParams.get("reset_password")).orElse(true));
-        }
-
-        if(entryParams.get("status") != null){
-            try {
-                params.put("status", Status.getStatusType(String.valueOf(entryParams.get("status"))));
-            } catch (Exception e) {
-                log.error(e.getMessage());
-
-                return new ArrayList<>();
+            if(results != null && !results.isEmpty()){
+                return results.get(0);
             }
-        }
-
-        params.put("updated_at", Timestamp.valueOf(LocalDateTime.now()));
-        params.put("deleted_at", null);
-
-        params = Utility.cleanMap(params);
-
-        LinkedHashMap<String, Object> where_params = new LinkedHashMap<>();
-
-        String sql;
-        String table = "users";
-
-        where_params.put("id", Integer.parseInt(String.valueOf(entryParams.get("id"))));
-
-        sql = Models.UpdateString(table, params, where_params);
-
-        sql += " returning *";
-
-        List<Map<String, Object>> results = NamedBaseExecute(sql, params, where_params, new MapResultHandler());
-
-        if(!results.isEmpty()){
-            return results;
+        } catch (Exception e) {
+            log.error(e.getMessage());
         }
 
         return null;
@@ -268,19 +234,48 @@ public class DBFunctionImpl {
     }
     // </editor-fold>
     //
-    // <editor-fold default-state="collapsed" desc="searchUser(String searchTerm)">
-    public Map<String, Object> searchUser(String searchTerm) {
-        LinkedHashMap<String, Object> param = new LinkedHashMap<>();
-        String sql = "SELECT * FROM users WHERE email=:email OR msisdn=:msisdn OR fullname=:fullname LIMIT 1 " +
-                "ORDER BY id, created_at ASC";
+    // <editor-fold default-state="collapsed" desc="searchUserByEmailAndMsisdn(String searchTerm)">
+    public Map<String, Object> searchUserByEmailAndMsisdn(String searchTerm) {
+        try{
+            String sql = "SELECT * FROM users WHERE email=:email OR msisdn=:msisdn ORDER BY id, created_at DESC LIMIT 1";
 
-        param.put("email", searchTerm);
-        param.put("msisdn", searchTerm);
-        param.put("fullname", searchTerm);
+            LinkedHashMap<String, Object> param = new LinkedHashMap<>(){{
+                put("email", searchTerm);
+                put("msisdn", searchTerm);
+            }};
 
-        List<Map<String, Object>> user = NamedBaseExecute(sql, param, null, new MapResultHandler());
+            List<Map<String, Object>> results = NamedBaseExecute(sql, param, null, new MapResultHandler());
 
-        return !user.isEmpty() ? user.get(0) : null;
+            if(results != null && !results.isEmpty()){
+                return results.get(0);
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
+
+        return null;
+    }
+    // </editor-fold>
+    //
+    // <editor-fold default-state="collapsed" desc="searchUserById(String id)">
+    public Map<String, Object> searchUserById(String id) {
+        try{
+            String sql = "SELECT * FROM users WHERE id=:id LIMIT 1";
+
+            LinkedHashMap<String, Object> param = new LinkedHashMap<>(){{
+                put("id", Integer.parseInt(id));
+            }};
+
+            List<Map<String, Object>> results = NamedBaseExecute(sql, param, null, new MapResultHandler());
+
+            if(results != null && !results.isEmpty()){
+                return results.get(0);
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
+
+        return null;
     }
     // </editor-fold>
     //
@@ -325,42 +320,36 @@ public class DBFunctionImpl {
     }
     // </editor-fold>
     //
-    // <editor-fold default-state="collapsed" desc="searchUserById(String id)">
-    public Map<String, Object> searchUserById(String id) {
-        LinkedHashMap<String, Object> param = new LinkedHashMap<>();
-        String sql = "SELECT * FROM users WHERE id=:id LIMIT 1";
-
-        param.put("id", Integer.parseInt(id));
-
-        List<Map<String, Object>> users = NamedBaseExecute(sql, param, null, new MapResultHandler());
-
-        return !users.isEmpty() ? users.get(0) : null;
-    }
-    // </editor-fold>
-    //
     // <editor-fold default-state="collapsed" desc="deleteUser(String id)">
     public Map<String, Object> deleteUser(String id) {
-        LinkedHashMap<String, Object> params = new LinkedHashMap<>();
+        try {
+            LocalDateTime now = LocalDateTime.now();
+            String table = "users";
 
-        params.put("status", Status.DELETED);
-        params.put("deleted_at", Timestamp.valueOf(LocalDateTime.now()));
+            LinkedHashMap<String, Object> params = new LinkedHashMap<>(){{
+                put("status", Status.DELETED.name());
+                put("updated_at", now);
+                put("deleted_at", now);
+            }};
 
-        LinkedHashMap<String, Object> where_params = new LinkedHashMap<>();
-        where_params.put("id", Integer.parseInt(id));
+            params = Utility.cleanMap(params);
 
-        String sql;
-        String table = "users";
+            LinkedHashMap<String, Object> where_params = new LinkedHashMap<>(){{
+                put("id", Integer.parseInt(id));
+            }};
 
-        where_params.put("id", Integer.parseInt(id));
+            params = Utility.cleanMap(params);
 
-        sql = Models.UpdateString(table, params, where_params);
+            String sql = Models.UpdateString(table, params, where_params);
+            sql += " returning *";
 
-        sql += " returning *";
+            List<Map<String, Object>> results = NamedBaseExecute(sql, params, where_params, new MapResultHandler());
 
-        List<Map<String, Object>> results = NamedBaseExecute(sql, params, where_params, new MapResultHandler());
-
-        if(!results.isEmpty()){
-            return results.get(0);
+            if(!results.isEmpty()){
+                return results.get(0);
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage());
         }
 
         return null;
@@ -463,7 +452,6 @@ public class DBFunctionImpl {
     public Map<String, Object> deleteProperty(String propertyId) {
         try {
             LocalDateTime now = LocalDateTime.now();
-            String sql;
             String table = "properties";
 
             LinkedHashMap<String, Object> params = new LinkedHashMap<>(){{
@@ -481,7 +469,7 @@ public class DBFunctionImpl {
 
             params = Utility.cleanMap(params);
 
-            sql = Models.UpdateString(table, params, where_params);
+            String sql = Models.UpdateString(table, params, where_params);
             sql += " returning *";
 
             List<Map<String, Object>> results = NamedBaseExecute(sql, params, where_params, new MapResultHandler());

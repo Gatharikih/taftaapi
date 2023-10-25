@@ -1,14 +1,13 @@
 package org.tafta.taftaapi.services;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.tafta.taftaapi.repo.DBFunctionImpl;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author Gathariki Ngigi
@@ -24,15 +23,30 @@ public class UserService {
 
     public Map<String, Object> createUser(Map<String, Object> userParams){
         Map<String, Object> response = new HashMap<>();
-        List<Map<String, Object>> createUserResponse = dbFunction.createUser(userParams);
 
-        if(createUserResponse != null && !createUserResponse.isEmpty()){
-            response.put("response_code", "201");
-            response.put("response_description", "Success");
-            response.put("response_data", createUserResponse);
-        }else{
-            response.put("response_code", "200");
-            response.put("response_description", "Record not updated");
+        try {
+            Map<String, Object> createUserResponse = dbFunction.createUser(userParams);
+
+            if(createUserResponse != null && createUserResponse.get("created") != null){
+                if (Boolean.parseBoolean(String.valueOf(createUserResponse.get("created")))) {
+                    response.put("response_code", "201");
+                    response.put("response_description", "Success");
+                    response.put("response_data", createUserResponse);
+                } else {
+                    response.put("response_code", "200");
+                    response.put("response_description", "User exists");
+                    response.put("response_data", null);
+                }
+            }else{
+                response.put("response_code", "200");
+                response.put("response_description", "User not created");
+                response.put("response_data", null);
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage());
+
+            response.put("response_code", "500");
+            response.put("response_description", "Internal Error");
             response.put("response_data", null);
         }
 
@@ -41,31 +55,34 @@ public class UserService {
 
     public Map<String, Object> updateUser(Map<String, Object> userParams, String userId){
         Map<String, Object> response = new HashMap<>();
-        Map<String, Object> userResponse = dbFunction.searchUserById(userId);
 
-        if (userResponse != null) {
-            userParams.putIfAbsent("id", userId);
+        try {
+            Map<String, Object> userResponse = dbFunction.searchUserById(userId);
 
-            List<Map<String, Object>> updateUserResponse = dbFunction.updateUser(userParams);
+            if (userResponse != null) {
+                userParams.putIfAbsent("id", userResponse.get("id"));
 
-            if(updateUserResponse != null){
-                if(!updateUserResponse.isEmpty()){
-                    response.put("response_code", "201");
+                Map<String, Object> updateUserResponse = dbFunction.updateUser(userParams);
+
+                if(updateUserResponse != null){
+                    response.put("response_code", "200");
                     response.put("response_description", "Success");
                     response.put("response_data", updateUserResponse);
                 }else{
-                    response.put("response_code", "400");
-                    response.put("response_description", "Unrecognized status");
+                    response.put("response_code", "200");
+                    response.put("response_description", "User not updated");
                     response.put("response_data", null);
                 }
-            }else{
-                response.put("response_code", "200");
-                response.put("response_description", "Record not updated");
+            } else {
+                response.put("response_code", "404");
+                response.put("response_description", "User not found");
                 response.put("response_data", null);
             }
-        } else {
-            response.put("response_code", "404");
-            response.put("response_description", "User not found");
+        } catch (Exception e) {
+            log.error(e.getMessage());
+
+            response.put("response_code", "500");
+            response.put("response_description", "Internal Error");
             response.put("response_data", null);
         }
 
@@ -74,33 +91,24 @@ public class UserService {
 
     public Map<String, Object> searchUser(String searchTerm){
         Map<String, Object> response = new HashMap<>();
-        Map<String, Object> searchUserResponse = dbFunction.searchUser(searchTerm);
 
-        if(searchUserResponse != null){
-            response.put("response_code", "200");
-            response.put("response_description", "Success");
-            response.put("response_data", searchUserResponse);
-        }else{
-            response.put("response_code", "404");
-            response.put("response_description", "User not found");
-            response.put("response_data", null);
-        }
+        try {
+            Map<String, Object> searchUserResponse = dbFunction.searchUserByEmailAndMsisdn(searchTerm);
 
-        return response;
-    }
+            if(searchUserResponse != null){
+                response.put("response_code", "200");
+                response.put("response_description", "Success");
+                response.put("response_data", searchUserResponse);
+            }else{
+                response.put("response_code", "404");
+                response.put("response_description", "User not found");
+                response.put("response_data", null);
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage());
 
-    public Map<String, Object> listAllUsers(Map<String, Object> queryParams){
-        Map<String, Object> response = new HashMap<>();
-        List<Map<String, Object>> listAllUsersResponse = dbFunction.listAllUsers(queryParams);
-
-        if(listAllUsersResponse != null){
-            response.put("response_code", "200");
-            response.put("response_description", "Success");
-            response.put("response_data", listAllUsersResponse);
-            response.put("page_size", listAllUsersResponse.size());
-        }else{
-            response.put("response_code", "404");
-            response.put("response_description", "No user found");
+            response.put("response_code", "500");
+            response.put("response_description", "Internal Error");
             response.put("response_data", null);
         }
 
@@ -109,15 +117,51 @@ public class UserService {
 
     public Map<String, Object> searchUserById(String id){
         Map<String, Object> response = new HashMap<>();
-        Map<String, Object> searchUserResponse = dbFunction.searchUserById(id);
 
-        if(searchUserResponse != null){
-            response.put("response_code", "200");
-            response.put("response_description", "Success");
-            response.put("response_data", searchUserResponse);
-        }else{
-            response.put("response_code", "404");
-            response.put("response_description", "User not found");
+        try {
+            Map<String, Object> searchUserResponse = dbFunction.searchUserById(id);
+
+            if(searchUserResponse != null){
+                response.put("response_code", "200");
+                response.put("response_description", "Success");
+                response.put("response_data", searchUserResponse);
+            }else{
+                response.put("response_code", "404");
+                response.put("response_description", "User not found");
+                response.put("response_data", null);
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage());
+
+            response.put("response_code", "500");
+            response.put("response_description", "Internal Error");
+            response.put("response_data", null);
+        }
+
+        return response;
+    }
+
+    public Map<String, Object> listAllUsers(Map<String, Object> queryParams){
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            List<Map<String, Object>> listAllUsersResponse = dbFunction.listAllUsers(queryParams);
+
+            if(listAllUsersResponse != null){
+                response.put("response_code", "200");
+                response.put("response_description", "Success");
+                response.put("response_data", listAllUsersResponse);
+                response.put("page_size", listAllUsersResponse.size());
+            }else{
+                response.put("response_code", "404");
+                response.put("response_description", "No user found");
+                response.put("response_data", null);
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage());
+
+            response.put("response_code", "500");
+            response.put("response_description", "Internal Error");
             response.put("response_data", null);
         }
 
@@ -126,23 +170,32 @@ public class UserService {
 
     public Map<String, Object> deleteUser(String id){
         Map<String, Object> response = new HashMap<>();
-        Map<String, Object> searchUserResponse = dbFunction.searchUserById(id);
 
-        if(searchUserResponse != null){
-            Map<String, Object> deleteUserResponse = dbFunction.deleteUser(id);
+        try {
+            Map<String, Object> searchUserResponse = dbFunction.searchUserById(id);
 
-            if(deleteUserResponse != null){
-                response.put("response_code", "200");
-                response.put("response_description", "Success");
-                response.put("response_data", null);
+            if(searchUserResponse != null){
+                Map<String, Object> deleteUserResponse = dbFunction.deleteUser(String.valueOf(searchUserResponse.get("id")));
+
+                if(deleteUserResponse != null){
+                    response.put("response_code", "200");
+                    response.put("response_description", "Success");
+                    response.put("response_data", deleteUserResponse.get("id"));
+                }else{
+                    response.put("response_code", "200");
+                    response.put("response_description", "User not deleted");
+                    response.put("response_data", null);
+                }
             }else{
-                response.put("response_code", "200");
-                response.put("response_description", "User not deleted");
+                response.put("response_code", "404");
+                response.put("response_description", "User not found");
                 response.put("response_data", null);
             }
-        }else{
-            response.put("response_code", "200");
-            response.put("response_description", "User not found");
+        } catch (Exception e) {
+            log.error(e.getMessage());
+
+            response.put("response_code", "500");
+            response.put("response_description", "Internal Error");
             response.put("response_data", null);
         }
 

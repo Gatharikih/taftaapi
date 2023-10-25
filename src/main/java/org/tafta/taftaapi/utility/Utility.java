@@ -140,33 +140,21 @@ public class Utility {
         return sessionCreationPolicy;
     }
 
-    public static Map<String, Object> cleanMap(Map<String, Object> map) {
+    public static LinkedHashMap<String, Object> cleanMap(LinkedHashMap<String, Object> map) {
         if (map != null) {
-            Map<String, Object> retMap = new HashMap<>();
+            map.entrySet().removeIf(stringObjectEntry -> stringObjectEntry.getValue() == null || stringObjectEntry.getValue() == "null");
 
-            for (Map.Entry<String, Object> param : map.entrySet()) {
-                if (param.getValue() != null) {
-                    retMap.put(param.getKey(), param.getValue());
-                }
-            }
-
-            return retMap;
+            return map;
         }
 
         return null;
     }
 
-    public static LinkedHashMap<String, Object> cleanMap(LinkedHashMap<String, Object> map) {
+    public static Map<String, Object> cleanMap(Map<String, Object> map) {
         if (map != null) {
-            LinkedHashMap<String, Object> retMap = new LinkedHashMap<>();
+            map.entrySet().removeIf(stringObjectEntry -> stringObjectEntry.getValue() == null || stringObjectEntry.getValue() == "null");
 
-            for (Map.Entry<String, Object> param : map.entrySet()) {
-                if (param.getValue() != null) {
-                    retMap.put(param.getKey(), param.getValue());
-                }
-            }
-
-            return retMap;
+            return map;
         }
 
         return null;
