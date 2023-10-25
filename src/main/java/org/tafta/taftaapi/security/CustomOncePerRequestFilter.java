@@ -5,19 +5,17 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StreamUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 import org.tafta.taftaapi.requestfiltergate.CachedHttpRequestWrapper;
 import org.tafta.taftaapi.utility.Utility;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 
 /**
  * @author Gathariki Ngigi
@@ -30,6 +28,9 @@ import java.nio.charset.StandardCharsets;
 @Component
 @Slf4j
 public class CustomOncePerRequestFilter extends OncePerRequestFilter {
+    @Autowired
+    CustomAuthenticationManager customAuthenticationManager;
+
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
                                     @NonNull FilterChain filterChain) throws IOException {
@@ -37,25 +38,11 @@ public class CustomOncePerRequestFilter extends OncePerRequestFilter {
         ContentCachingResponseWrapper responseWrapper = new ContentCachingResponseWrapper(response);
 
         String reqID = request.getRequestId();
-        String queryString = request.getQueryString();
-        String path = request.getRequestURL() + (queryString != null ? "?" + queryString : "");
-        String host = request.getRemoteHost();
-        String method = request.getMethod();
-        String ip = request.getHeader("X-FORWARDED-FOR") != null ? request.getHeader("X-FORWARDED-FOR") : request.getRemoteAddr();
-
-        log.info("X-FORWARDED-FOR " + ip);
-
         long startTime = System.currentTimeMillis();
         String msg = "Authenticated successfully";
 
         try {
-            String body = StreamUtils.copyToString(cachedHttpRequestWrapper.getInputStream(),
-                    StandardCharsets.UTF_8);
-
-            log.info("{} ReqID={} IP={} Host={} Method={} Path={} ReqPayload={}",
-                    Utility.appInstanceActivityID(), reqID, ip, host, method, path, body);
-
-            Authentication authentication = getApiKeyAuthentication(request);
+            Authentication authentication = customAuthenticationManager.authenticateApiKey(request);
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
@@ -78,15 +65,5 @@ public class CustomOncePerRequestFilter extends OncePerRequestFilter {
 
         // !!! NEVER DELETE OR COMMENT THE LINE BLOW DO YOU RESEARCH COZ IT'S A WRONG STORY !!!
         responseWrapper.copyBodyToResponse();
-    }
-
-    public Authentication getApiKeyAuthentication(HttpServletRequest request) {
-        String apiKey = request.getHeader("X-API-KEY");
-
-        if (apiKey == null || !apiKey.equals("FrhiGh1Tymi2BNz7AnXmHiQ")) {
-            throw new BadCredentialsException("Invalid API Key");
-        }
-
-        return new ApiKeyAuthentication(AuthorityUtils.NO_AUTHORITIES);
     }
 }

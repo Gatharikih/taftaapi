@@ -1,12 +1,15 @@
 package org.tafta.taftaapi.security;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.authority.AuthorityUtils;
 import org.tafta.taftaapi.services.SecurityService;
 
 /**
@@ -17,6 +20,7 @@ import org.tafta.taftaapi.services.SecurityService;
  * Processes an Authentication request.
  */
 @Slf4j
+@Configuration
 public class CustomAuthenticationManager implements AuthenticationManager {
     @Autowired
     UserSecurityDetailsService userSecurityDetailsService;
@@ -55,5 +59,15 @@ public class CustomAuthenticationManager implements AuthenticationManager {
         usernamePasswordAuthenticationToken.setDetails(authentication.getDetails());
 
         return usernamePasswordAuthenticationToken;
+    }
+
+    public Authentication authenticateApiKey(HttpServletRequest request) {
+        String apiKey = request.getHeader("X-API-KEY");
+
+        if (apiKey == null || !apiKey.equals("FrhiGh1Tymi2BNz7AnXmHiQ")) {
+            throw new BadCredentialsException("Invalid API Key");
+        }
+
+        return new ApiKeyAuthentication(AuthorityUtils.NO_AUTHORITIES);
     }
 }

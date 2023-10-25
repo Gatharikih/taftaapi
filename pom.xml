@@ -92,6 +92,12 @@
 			</exclusions>
 		</dependency>
 
+<!--		<dependency>-->
+<!--			<groupId>com.nimbusds</groupId>-->
+<!--			<artifactId>nimbus-jose-jwt</artifactId>-->
+<!--			<version>9.31</version>-->
+<!--		</dependency>-->
+
 		<!--	TEST DEPENDENCIES	-->
 
 		<dependency>

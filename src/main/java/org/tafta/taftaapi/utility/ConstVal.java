@@ -7,5 +7,6 @@ package org.tafta.taftaapi.utility;
  */
 
 public class ConstVal {
-    public static final String LOG_BLOCK_MSG = "{Response body blocked due to log size or sensitive data contact tech}";
+    public static final String LOG_BLOCK_MSG = "{ Response body blocked due to log size or sensitive data contact tech }";
+    public static final String TOKEN_TYPE_BEARER = "Bearer";
 }
