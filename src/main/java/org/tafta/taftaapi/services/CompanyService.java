@@ -136,6 +136,36 @@ public class CompanyService {
         return response;
     }
 
+    public Map<String, Object> searchCompany(String id){
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            Map<String, Object> searchCompanyResponse = dbFunction.searchCompany(id);
+
+            if(searchCompanyResponse != null){
+                searchCompanyResponse.remove("password");
+                searchCompanyResponse.remove("api_password");
+                searchCompanyResponse.remove("api_key");
+
+                response.put("response_code", "200");
+                response.put("response_description", "Success");
+                response.put("response_data", searchCompanyResponse);
+            }else{
+                response.put("response_code", "404");
+                response.put("response_description", "No company found");
+                response.put("response_data", null);
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage());
+
+            response.put("response_code", "500");
+            response.put("response_description", "Internal error");
+            response.put("response_data", null);
+        }
+
+        return response;
+    }
+
     public Map<String, Object> deleteCompany(String id){
         Map<String, Object> response = new HashMap<>();
 

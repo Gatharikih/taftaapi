@@ -34,6 +34,14 @@ public class SecurityService {
         return bCryptPasswordEncoder.encode(plainPassword);
     }
 
+    public boolean verifyPassword(CharSequence rawPassword, String encodedPassword) {
+        try {
+            return bCryptPasswordEncoder.matches(rawPassword, encodedPassword);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     /** Compare two passwords
      * @param rawPassword the raw password to encode and match
      * @param encodedPassword the encoded password from data store to compare with

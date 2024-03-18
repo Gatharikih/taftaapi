@@ -1,16 +1,19 @@
 package org.tafta.taftaapi.controllers;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.tafta.taftaapi.models.Property;
+import org.tafta.taftaapi.repo.DBFunctionImpl;
 import org.tafta.taftaapi.services.DataValidation;
 import org.tafta.taftaapi.services.PropertyService;
 import org.tafta.taftaapi.utility.Utility;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author Gathariki Ngigi
@@ -25,7 +28,8 @@ public class PropertyController {
     PropertyService propertyService;
     @Autowired
     DataValidation dataValidation;
-    ObjectMapper mapper = new ObjectMapper();
+    @Autowired
+    DBFunctionImpl dbFunction;
 
     @RequestMapping(value ="/properties/{property_id}", method = RequestMethod.GET)
     public ResponseEntity<Object> getProperty(@PathVariable("property_id") String propertyId) {
@@ -48,7 +52,7 @@ public class PropertyController {
         }
 
         return ResponseEntity
-                .status(Integer.parseInt(searchPropertyResponse.get("response_code").toString()))
+                .status(Integer.parseInt(String.valueOf(searchPropertyResponse.get("response_code"))))
                 .body(searchPropertyResponse);
     }
 
@@ -79,7 +83,7 @@ public class PropertyController {
         }
 
         return ResponseEntity
-                .status(Integer.parseInt(searchPropertiesResponse.get("response_code").toString()))
+                .status(Integer.parseInt(String.valueOf(searchPropertiesResponse.get("response_code"))))
                 .body(searchPropertiesResponse);
     }
 
@@ -89,14 +93,12 @@ public class PropertyController {
         Map<String, Object> listAllPropertiesResponse = new HashMap<>();
 
         try {
-            Map<String, Object> searchMap = new HashMap<>();
-
-            searchMap.put("page_number", pageNumber);
-            searchMap.put("status", status);
+            Map<String, Object> searchMap = new HashMap<>(){{
+                put("page_number", pageNumber);
+                put("status", status);
+            }};
 
             searchMap = Utility.cleanMap(searchMap);
-
-            log.info("searchMap: " + searchMap);
 
             listAllPropertiesResponse = propertyService.listAllProperties(searchMap);
         } catch (Exception e) {
@@ -108,11 +110,11 @@ public class PropertyController {
         }
 
         return ResponseEntity
-                .status(Integer.parseInt(listAllPropertiesResponse.get("response_code").toString()))
+                .status(Integer.parseInt(String.valueOf(listAllPropertiesResponse.get("response_code"))))
                 .body(listAllPropertiesResponse);
     }
 
-    @RequestMapping(value ="/properties/{property_id}", method = RequestMethod.PUT)
+    @RequestMapping(value ="/properties/{property_id}", method = RequestMethod.PUT, consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
     public ResponseEntity<Object> updateProperty(@PathVariable("property_id") String propertyId,
                                                  @RequestBody Map<String, Object> body) {
         Map<String, Object> updatePropertyResponse = new HashMap<>();
@@ -144,56 +146,67 @@ public class PropertyController {
         }
 
         return ResponseEntity
-                .status(Integer.parseInt(updatePropertyResponse.get("response_code").toString()))
+                .status(Integer.parseInt(String.valueOf(updatePropertyResponse.get("response_code"))))
                 .body(updatePropertyResponse);
     }
 
-    @RequestMapping(value ="/properties", method = RequestMethod.POST)
-    public ResponseEntity<Object> createProperty(@RequestBody Map<String, Object> body) {
-        Map<String, Object> createPropertyResponse = new HashMap<>();
+    // @RequestPart
+    @RequestMapping(value ="/properties", method = RequestMethod.POST, consumes = { MediaType.MULTIPART_FORM_DATA_VALUE }, // , MediaType.MULTIPART_MIXED_VALUE
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Object> createProperty(@ModelAttribute Property property) {
+        Map<String, Object> response = new HashMap<>();
+        String propertyId = property.getProperty_id();
+
+        log.info("property id: " + propertyId);
 
         try {
-            body.put("property_id", "PRP_" + Utility.generateRandomAlphanumeric(10));
+            if (propertyId != null) {
+                Map<String, Object> savedProperty = dbFunction.searchPropertyById(propertyId);
 
-            List<String> requiredFields = new ArrayList<>(){{
-                add("county");
-                add("latitude");
-                add("location");
-                add("longitude");
-                add("property_response_description");
-                add("property_name");
-                add("property_price");
-                add("property_id");
-            }};
+                if (savedProperty != null) {
+                    List<Map<String, Object>> savedPropertyPhotos = dbFunction.getPropertyPhotos(propertyId);
 
-            Map<String, Object> dataValidationResult = dataValidation.areFieldsValid(body, requiredFields);
+                    savedProperty.put("photos", savedPropertyPhotos);
 
-            if (Boolean.parseBoolean(dataValidationResult.get("valid").toString())) {
-                createPropertyResponse = propertyService.createProperty(body);
+                    response.put("response_code", "200");
+                    response.put("response_description", "Success");
+                    response.put("response_data", savedProperty);
+                } else {
+                    Map<String, Object> dataValidationResult = dataValidation.validatePropertyObject(property);
+
+                    response.putAll(dataValidationResult);
+
+                    if (Boolean.parseBoolean(String.valueOf(dataValidationResult.get("valid")))) {
+                        response = propertyService.createProperty(property);
+
+                        // response.put("response_code", "200");
+                        // response.put("response_description", "OK");
+                    } else {
+                        response.put("response_code", "400");
+                        response.put("response_description", "VALIDATION FAILED");
+                    }
+                }
             } else {
-                Map<String, Object> validationErrorMap = mapper.convertValue(dataValidationResult.get("errors"), new TypeReference<>() {});
-
-                createPropertyResponse.put("response_code", "400");
-                createPropertyResponse.put("response_description", "FAILED");
-                createPropertyResponse.put("errors", validationErrorMap.get("message"));
+                response.put("response_code", "400");
+                response.put("response_description", "VALIDATION FAILED - Property ID is null");
             }
         } catch (Exception e) {
             log.error(e.getMessage());
 
             if (e.getCause() != null || e.getCause().getMessage().contains("duplicate key") || e.getCause().getMessage().contains("unique constraint")){
-                createPropertyResponse.put("response_code", "400");
-                createPropertyResponse.put("response_description", "FAILED");
-                createPropertyResponse.put("errors", "Property already exists");
+                response.put("response_code", "400");
+                response.put("response_description", "FAILED");
+                response.put("errors", "Property already exists");
             }else {
-                createPropertyResponse.put("response_code", "500");
-                createPropertyResponse.put("response_description", "FAILED");
-                createPropertyResponse.put("errors", "Internal error occurred");
+                response.put("response_code", "500");
+                response.put("response_description", "FAILED");
+                response.put("errors", "Internal error occurred");
             }
         }
 
         return ResponseEntity
-                .status(Integer.parseInt(createPropertyResponse.get("response_code").toString()))
-                .body(createPropertyResponse);
+                .status(Integer.parseInt(String.valueOf(response.get("response_code"))))
+                .body(response);
     }
 
     @RequestMapping(value ="/properties/{property_id}", method = RequestMethod.DELETE)
@@ -217,7 +230,7 @@ public class PropertyController {
         }
 
         return ResponseEntity
-                .status(Integer.parseInt(deletePropertyResponse.get("response_code").toString()))
+                .status(Integer.parseInt(String.valueOf(deletePropertyResponse.get("response_code"))))
                 .body(deletePropertyResponse);
     }
 }

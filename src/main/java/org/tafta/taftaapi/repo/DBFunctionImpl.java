@@ -10,7 +10,6 @@ import org.apache.commons.codec.digest.HmacUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.tafta.taftaapi.enums.Status;
-import org.tafta.taftaapi.enums.Status;
 import org.tafta.taftaapi.utility.Utility;
 
 import javax.crypto.Mac;
@@ -37,8 +36,6 @@ public class DBFunctionImpl {
     static Mac mac = null;
     private static DbOom dbOom = null;
     int trackQuery;
-    int numOfOperations;
-    boolean addNewPermission = false, stripePermission = false;
     final Map<String, Object> exceptions = new HashMap<>();
     ObjectMapper mapper = new ObjectMapper();
 
@@ -192,8 +189,6 @@ public class DBFunctionImpl {
                 put("msisdn", entryParams.get("msisdn"));
                 put("reset_password", Boolean.parseBoolean(String.valueOf(entryParams.getOrDefault("reset_password", "true"))));
                 put("status", Status.getStatusType(String.valueOf(entryParams.getOrDefault("status", "active"))));
-                put("api_key", entryParams.get("api_key"));
-                put("api_access", entryParams.get("api_access"));
                 put("created_at", now);
                 put("updated_at", now);
             }};
@@ -279,44 +274,32 @@ public class DBFunctionImpl {
     }
     // </editor-fold>
     //
-    // <editor-fold default-state="collapsed" desc="findUserUsingEmailAndApiPassword(String email, String apiPassword)">
-    public Map<String, Object> findActiveUserUsingEmail(String email) {
-        LinkedHashMap<String, Object> param = new LinkedHashMap<>();
+    // <editor-fold default-state="collapsed" desc="List<Map<String, Object>>listAllUsers(String pageNumber) ">
+    public List<Map<String, Object>> listAllUsers(Map<String, Object> queryParams) {
+        try {
+            String sql = "SELECT * FROM users WHERE LOWER(status)=LOWER(:status) ORDER BY id, created_at ASC LIMIT :limit OFFSET :offset";
 
-        String sql = "SELECT * FROM users WHERE email=:email AND UPPER(status)=:status ";
+            Map<String, Object> limitAndOffset = Utility.getLimitAndOffset(50, queryParams);
 
-        param.put("email", email);
-        param.put("status", "ACTIVE");
+            int limit = Integer.parseInt(String.valueOf(limitAndOffset.get("limit")));
+            int offset = Integer.parseInt(String.valueOf(limitAndOffset.get("offset")));
 
-        List<Map<String, Object>> results = NamedBaseExecute(sql, param, null, new MapResultHandler());
+            LinkedHashMap<String, Object> where_param = new LinkedHashMap<>(){{
+                put("status", queryParams.getOrDefault("status", "ACTIVE"));
+                put("limit", limit);
+                put("offset", offset);
+            }};
 
-        if (results != null && !results.isEmpty()) {
-            return results.get(0);
+            List<Map<String, Object>> results = NamedBaseExecute(sql, null, where_param, new MapResultHandler());
+
+            if(results != null && !results.isEmpty()){
+                return results;
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage());
         }
 
         return null;
-    }
-    // </editor-fold>
-    //
-    // <editor-fold default-state="collapsed" desc="List<Map<String, Object>>listAllUsers(String pageNumber) ">
-    public List<Map<String, Object>> listAllUsers(Map<String, Object> queryParams) {
-        LinkedHashMap<String, Object> params = new LinkedHashMap<>();
-        LinkedHashMap<String, Object> where_param = new LinkedHashMap<>();
-        String sql = "SELECT * FROM users WHERE status=:status ORDER BY id, created_at ASC LIMIT :limit OFFSET :offset";
-
-        params = Utility.cleanMap(params);
-
-        int limit = 50;
-
-        where_param.put("status", queryParams.getOrDefault("status", "ACTIVE"));
-        where_param.put("limit", limit);
-        where_param.put("offset", Integer.parseInt(String.valueOf(queryParams.getOrDefault("page_number", "0"))) * limit);
-
-        log.error("where_param: " + where_param);
-
-        List<Map<String, Object>> user = NamedBaseExecute(sql, params, where_param, new MapResultHandler());
-
-        return !user.isEmpty() ? user : null;
     }
     // </editor-fold>
     //
@@ -487,6 +470,8 @@ public class DBFunctionImpl {
     //
     // <editor-fold default-state="collapsed" desc="createProperty(Map<String, Object> entryParams)">
     public Map<String, Object> createProperty(Map<String, Object> entryParams) {
+        log.info("---------------- CREATE PROPERTY -------------------");
+
         try {
             LinkedHashMap<String, Object> params = new LinkedHashMap<>();
 
@@ -505,10 +490,10 @@ public class DBFunctionImpl {
             params.put("minimum_price", entryParams.get("minimum_price"));
             params.put("property_description", entryParams.get("property_description"));
             params.put("property_id", entryParams.get("property_id"));
-            params.put("property_name", entryParams.get("property_name"));
-            params.put("property_price", entryParams.get("property_price"));
-            params.put("property_type", entryParams.get("property_type"));
-            params.put("property_amenities", entryParams.get("property_amenities"));
+            params.put("property_name", entryParams.getOrDefault("property_name", entryParams.get("name")));
+            params.put("price", entryParams.getOrDefault("property_price", entryParams.get("price")));
+            params.put("property_type", entryParams.getOrDefault("property_type", entryParams.get("type")));
+            params.put("property_amenities", entryParams.getOrDefault("property_amenities", entryParams.get("amenities")));
             params.put("published_at", now);
             params.put("status", Status.getStatusType(String.valueOf(entryParams.getOrDefault("status", "active"))));
             params.put("updated_at", now);
@@ -626,20 +611,141 @@ public class DBFunctionImpl {
     }
     // </editor-fold>
 
+
+    /**-------------------- PHOTOS -------------------------*/
+
+    // <editor-fold default-state="collapsed" desc="createPhoto(Map<String, Object> entryParams)">
+    public Map<String, Object> createPhoto(Map<String, Object> entryParams) {
+        log.info("---------------- CREATE PHOTOS -------------------");
+
+        try {
+            LinkedHashMap<String, Object> params = new LinkedHashMap<>();
+
+            // A date-time without a time-zone in the ISO-8601 calendar system, such as 2007-12-03T10:15:30.
+            LocalDateTime now = LocalDateTime.now();
+
+            params.put("alternative_text", entryParams.get("alternative_text"));
+            params.put("caption", entryParams.get("caption"));
+            params.put("created_at", now);
+            params.put("created_by", entryParams.get("user"));
+            params.put("ext", entryParams.get("ext"));
+            params.put("file_format", entryParams.get("file_format"));
+            params.put("file_name", entryParams.get("file_name"));
+            params.put("file_size", entryParams.get("file_size"));
+            params.put("hash", entryParams.get("hash"));
+            params.put("height", entryParams.get("height"));
+            params.put("mime", entryParams.get("mime"));
+            params.put("parent_id", entryParams.get("parent_id"));
+            params.put("photo_id", entryParams.get("photo_id"));
+            params.put("published_at", now);
+            params.put("updated_at", now);
+            params.put("updated_by", entryParams.get("user"));
+            params.put("width", entryParams.get("width"));
+
+            params = Utility.cleanMap(params);
+
+            String table = "photos";
+
+            String sql = Models.InsertString(table, params);
+            sql += " returning *";
+
+            List<Map<String, Object>> results = NamedBaseExecute(sql, params, null, new MapResultHandler());
+
+            if(results != null && !results.isEmpty()){
+                return results.get(0);
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
+
+        return null;
+    }
+    // </editor-fold>
+    //
+    // <editor-fold default-state="collapsed" desc="searchPhotoById(String photoId)">
+    public Map<String, Object> searchPhotoById(String photoId) {
+        try {
+            LinkedHashMap<String, Object> param = new LinkedHashMap<>();
+            String sql = "SELECT * FROM photos WHERE photo_id=:photo_id LIMIT 1";
+
+            param.put("photo_id", photoId.trim());
+
+            List<Map<String, Object>> photos = NamedBaseExecute(sql, param, null, new MapResultHandler());
+
+            return !photos.isEmpty() ? photos.get(0) : null;
+        } catch (Exception e) {
+            log.error(e.getMessage());
+
+            return null;
+        }
+    }
+    // </editor-fold>
+    //
+    // <editor-fold default-state="collapsed" desc="getPropertyPhotos(String parentId)">
+    public List<Map<String, Object>> getPropertyPhotos(String parentId) {
+        try {
+            LinkedHashMap<String, Object> param = new LinkedHashMap<>();
+            String sql = "SELECT * FROM photos WHERE parent_id=:parent_id";
+
+            param.put("parent_id", parentId.trim());
+
+            List<Map<String, Object>> propertyPhotos = NamedBaseExecute(sql, param, null, new MapResultHandler());
+
+            if (!propertyPhotos.isEmpty()){
+                return propertyPhotos;
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
+
+        return new ArrayList<>();
+    }
+    // </editor-fold>
+    //
+
     /**-------------------- COMPANIES -------------------------*/
 
     // <editor-fold default-state="collapsed" desc="searchCompanyById(String id)">
     public Map<String, Object> searchCompanyById(String id) {
         try {
             LinkedHashMap<String, Object> param = new LinkedHashMap<>(){{
-                put("company_id", id);
+                put("id", Integer.parseInt(id));
             }};
 
-            String sql = "SELECT * FROM companies WHERE company_id=:company_id LIMIT 1";
+            String sql = "SELECT * FROM companies WHERE id=:id LIMIT 1";
 
             List<Map<String, Object>> results = NamedBaseExecute(sql, param, null, new MapResultHandler());
 
             if (results != null && !results.isEmpty()){
+                return results.get(0);
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage());
+
+            if (e instanceof NumberFormatException){
+                return searchCompany(id);
+            }
+        }
+
+        return null;
+    }
+    // </editor-fold>
+    //
+    // <editor-fold default-state="collapsed" desc="searchCompany(String searchTerm)">
+    public Map<String, Object> searchCompany(String searchTerm) {
+        try{
+            String sql = "SELECT * FROM companies WHERE company_email=:company_email OR company_id=:company_id " +
+                    " OR api_key=:api_key ORDER BY id, created_at DESC LIMIT 1";
+
+            LinkedHashMap<String, Object> param = new LinkedHashMap<>(){{
+                put("company_email", searchTerm);
+                put("company_id", searchTerm);
+                put("api_key", searchTerm);
+            }};
+
+            List<Map<String, Object>> results = NamedBaseExecute(sql, param, null, new MapResultHandler());
+
+            if(results != null && !results.isEmpty()){
                 return results.get(0);
             }
         } catch (Exception e) {
@@ -961,6 +1067,28 @@ public class DBFunctionImpl {
         return null;
     }
     // </editor-fold>
+    //
+    // <editor-fold default-state="collapsed" desc="searchPermissions(List<String> permissions))">
+    public List<Map<String, Object>> searchPermissions(List<String> permissions){
+        try {
+            log.info("permissions == " + permissions);
+
+            List<Integer> permissionsGivenMayHaveDuplicates = permissions.stream().map(Integer::parseInt).toList();
+            List<Integer> permissionsWithoutDuplicates = new ArrayList<>(new HashSet<>(permissionsGivenMayHaveDuplicates));
+
+            String permissionsStringInBrackets = permissionsWithoutDuplicates.stream()
+                    .map(String::valueOf).collect(Collectors.joining(",", "(", ")"));
+
+            String sql = "SELECT * FROM permissions WHERE id IN " + permissionsStringInBrackets + " AND status='ACTIVE'";
+
+            return NamedBaseExecute(sql, null, null, new MapResultHandler());
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
+
+        return new ArrayList<>();
+    }
+    // </editor-fold>
 
     /**-------------------- ROLES -------------------------*/
 
@@ -1047,8 +1175,7 @@ public class DBFunctionImpl {
             }
 
             List<String> permissionsProvidedStr = mapper.convertValue(entryParams.get("permissions"), new TypeReference<>() {});
-            List<Integer> permissionsProvidedInt = new ArrayList<>(new HashSet<>(permissionsProvidedStr.stream().map(Integer::parseInt).toList()));
-            List<Map<String, Object>> permissionsFound = searchPermissions(permissionsProvidedInt);
+            List<Map<String, Object>> permissionsFound = searchPermissions(permissionsProvidedStr);
 
             if(!permissionsFound.isEmpty()){
                 String permissionsString = permissionsFound.stream()
@@ -1078,42 +1205,6 @@ public class DBFunctionImpl {
     }
     // </editor-fold>
     //
-    // <editor-fold default-state="collapsed" desc="searchPermissions(List<String> permissionsGiven))">
-    public List<Map<String, Object>> searchPermissions(List<Integer> permissionsGivenMayHaveDuplicates){
-        try {
-            List<Integer> permissionsWithoutDuplicates = new ArrayList<>(new HashSet<>(permissionsGivenMayHaveDuplicates));
-            String permissionsStringInBrackets = permissionsWithoutDuplicates.stream()
-                    .map(String::valueOf).collect(Collectors.joining(",", "(", ")"));
-
-            String sql = "SELECT * FROM permissions WHERE id IN " + permissionsStringInBrackets + " AND status='ACTIVE'";
-
-            return NamedBaseExecute(sql, null, null, new MapResultHandler());
-        } catch (Exception e) {
-            log.error(e.getMessage());
-        }
-
-        return new ArrayList<>();
-    }
-    // </editor-fold>
-    //
-    // <editor-fold default-state="collapsed" desc="findAllPermissionsAssignedToRole(String roleId))">
-    public List<Object> findAllPermissionsAssignedToRole(String roleId){
-        try {
-            LinkedHashMap<String, Object> param = new LinkedHashMap<>();
-            String sql = "SELECT permission_id FROM permissions_role_links WHERE id=:id ORDER BY id";
-
-            List<Map<String, Object>> permissions = NamedBaseExecute(sql, param, null, new MapResultHandler());
-            List<String> permissionsArr = permissions.stream().map(s -> String.valueOf(s.get("permission_id"))).toList();
-
-            return !permissions.isEmpty() ? mapper.convertValue(permissionsArr, new TypeReference<>() {}) : null;
-        } catch (Exception e) {
-            log.error(e.getMessage());
-        }
-
-        return null;
-    }
-    // </editor-fold>
-    //
     // <editor-fold default-state="collapsed" desc="updateRole(Map<String, Object> entryParams)">
     public Map<String, Object> updateRole(Map<String, Object> entryParams){
         try {
@@ -1124,10 +1215,7 @@ public class DBFunctionImpl {
 
             if (entryParams.get("permissions") != null) {
                 List<String> permissionsProvidedStr = mapper.convertValue(entryParams.get("permissions"), new TypeReference<>() {});
-                List<Integer> permissionsProvidedInt = new ArrayList<>(new HashSet<>(permissionsProvidedStr.stream()
-                        .map(Integer::parseInt).toList()));
-
-                List<Map<String, Object>> permissionsFound = searchPermissions(permissionsProvidedInt);
+                List<Map<String, Object>> permissionsFound = searchPermissions(permissionsProvidedStr);
 
                 if(!permissionsFound.isEmpty()){
                     String permissionsString = permissionsFound.stream()
@@ -1195,4 +1283,37 @@ public class DBFunctionImpl {
         return null;
     }
     // </editor-fold>
+    //
+    // <editor-fold default-state="collapsed" desc="searchRoles(List<String> rolesGivenMayHaveDuplicates))">
+    public List<Map<String, Object>> searchRoles(List<String> rolesGivenMayHaveDuplicates){
+        try {
+            List<String> rolesWithoutDuplicates = new ArrayList<>(new HashSet<>(rolesGivenMayHaveDuplicates));
+            String rolesStringInBrackets = rolesWithoutDuplicates.stream().map(String::valueOf)
+                    .collect(Collectors.joining(",", "(", ")"));
+
+            String sql = "SELECT * FROM roles WHERE id IN " + rolesStringInBrackets + " AND status='ACTIVE'";
+
+            return NamedBaseExecute(sql, null, null, new MapResultHandler());
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
+
+        return new ArrayList<>();
+    }
+    // </editor-fold>
+    //
+    // <editor-fold default-state="collapsed" desc="findAllPermissionsAssignedToRole(List<String> permissions))">
+    public List<Map<String, Object>> findAllPermissionsAssignedToRoles(List<String> permissions){
+        try {
+            if (permissions != null && !permissions.isEmpty()) {
+                return searchPermissions(permissions);
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
+
+        return new ArrayList<>();
+    }
+    // </editor-fold>
+    //
 }

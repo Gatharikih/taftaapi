@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -23,7 +24,7 @@ import org.tafta.taftaapi.services.SecurityService;
 @Configuration
 public class CustomAuthenticationManager implements AuthenticationManager {
     @Autowired
-    UserSecurityDetailsService userSecurityDetailsService;
+    CustomUserDetailsService customUserDetailsService;
     @Autowired
     SecurityService securityService;
 
@@ -36,11 +37,11 @@ public class CustomAuthenticationManager implements AuthenticationManager {
         String username = authentication.getName();
         String password = String.valueOf(authentication.getCredentials());
 
-        CustomUserDetails userDetails = userSecurityDetailsService.loadUserByUsername(username);
+        CustomUserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
 
         if (userDetails.isEnabled()) {
-            if (!(userDetails.getPassword().equals(password) && userDetails.getUsername().equals(username)
-                    || (userDetails.getUsername().equals(username) && securityService.comparePasswords(password, userDetails.getPassword())))) {
+            if (!(userDetails.getPassword().equals(password) && userDetails.getUsername().equals(username) ||
+                    (userDetails.getUsername().equals(username) && securityService.verifyPassword(password, userDetails.getPassword())))) {
                 throw new BadCredentialsException("Invalid Credentials");
             } else {
                 if (userDetails.isEnabled()) {

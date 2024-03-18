@@ -4,13 +4,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.tafta.taftaapi.repo.DBFunctionImpl;
 import org.tafta.taftaapi.services.DataValidation;
+import org.tafta.taftaapi.services.RoleService;
 import org.tafta.taftaapi.services.UserService;
+import org.tafta.taftaapi.utility.Utility;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author Gathariki Ngigi
@@ -24,7 +25,11 @@ public class UserController {
     @Autowired
     UserService userService;
     @Autowired
+    RoleService roleService;
+    @Autowired
     DataValidation dataValidation;
+    @Autowired
+    DBFunctionImpl dbFunction;
 
     @RequestMapping(value ="/users/{user_id}", method = RequestMethod.GET)
     public ResponseEntity<Object> searchUserById(@PathVariable("user_id") String userId) {
@@ -77,15 +82,19 @@ public class UserController {
     }
 
     @RequestMapping(value ="/users/list", method = RequestMethod.GET)
-    public ResponseEntity<Object> listAllUsers(@RequestParam("page_number") String pageNumber,
-                                               @RequestParam("status") String status) {
+    public ResponseEntity<Object> listAllUsers(@RequestParam(value = "page_number", required = false) String pageNumber,
+                                               @RequestParam(value = "status", required = false) String status) {
         Map<String, Object> listAllUsersResponse = new HashMap<>();
 
         try {
-            listAllUsersResponse = userService.listAllUsers(new HashMap<>(){{
+            Map<String, Object> params = new HashMap<>(){{
                 put("page_number", pageNumber);
                 put("status", status);
-            }});
+            }};
+
+            params = Utility.cleanMap(params);
+
+            listAllUsersResponse = userService.listAllUsers(params);
         } catch (Exception e) {
             log.error(e.getMessage());
 
@@ -189,5 +198,29 @@ public class UserController {
         return ResponseEntity
                 .status(Integer.parseInt(String.valueOf(deleteUserResponse.get("response_code"))))
                 .body(deleteUserResponse);
+    }
+
+    @RequestMapping(value ="/test", method = RequestMethod.POST)
+    public ResponseEntity<Object> test(@RequestBody Map<String, Object> body) {
+        Map<String, Object> assignedPermissions = null;
+
+        if (body.get("role") != null && !String.valueOf(body.get("role")).isEmpty()) {
+            List<String> roles = Arrays.stream(String.valueOf(body.get("role")).split(",")).toList();
+            List<Map<String, Object>> rolesToSearch = dbFunction.searchRoles(roles);
+
+            String rolePermissions = rolesToSearch.stream()
+                    .map(stringObjectMap -> String.valueOf(stringObjectMap.get("permissions")))
+                    .collect(Collectors.joining(","));
+
+            log.info("rolePermissions: " + rolePermissions);
+
+            assignedPermissions = roleService.searchRolesPermissions(List.of(rolePermissions.split(",")));
+        }
+
+        log.info("assignedPermissions: " + assignedPermissions);
+
+        return ResponseEntity
+                .status(Integer.parseInt("200"))
+                .body(assignedPermissions);
     }
 }

@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -15,13 +14,8 @@ import org.springframework.stereotype.Component;
 import org.tafta.taftaapi.services.RoleService;
 import org.tafta.taftaapi.services.SecurityService;
 import org.tafta.taftaapi.services.UserService;
-import org.tafta.taftaapi.utility.Utility;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.*;
 
 /**
  * @author Gathariki Ngigi
@@ -32,7 +26,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Component
-public class UserSecurityDetailsService implements UserDetailsService {
+public class CustomUserDetailsService implements UserDetailsService {
     @Autowired
     HttpServletRequest httpServletRequest;
     @Autowired
@@ -66,7 +60,7 @@ public class UserSecurityDetailsService implements UserDetailsService {
                 userId = String.valueOf(user.get("id"));
                 boolean apiAccess = Boolean.parseBoolean(String.valueOf(user.getOrDefault("api_access", "false")));
 
-                if (!(email.isEmpty() || password.isEmpty())) {{
+                if (!(email.isEmpty() || password.isEmpty())) {
                     if (apiAccess){
                         if(String.valueOf(user.get("password")).equals(password)){
                             authorities = setGrantedAuthority(String.valueOf(user.get("role_id")));
@@ -74,7 +68,7 @@ public class UserSecurityDetailsService implements UserDetailsService {
                     }else if (securityService.comparePasswords(password, String.valueOf(user.get("password")))){
                         authorities = setGrantedAuthority(String.valueOf(user.get("role_id")));
                     }
-                }}
+                }
             }
         } catch (Exception e) {
             log.error(e.getMessage());
@@ -85,15 +79,23 @@ public class UserSecurityDetailsService implements UserDetailsService {
         );
     }
 
-    private List<GrantedAuthority> setGrantedAuthority(String roleId){
+    private List<GrantedAuthority> setGrantedAuthority(String userRoles){
         List<GrantedAuthority> authorities = new ArrayList<>();
-        Map<String, Object> rolePermissions = roleService.searchRolePermissions(roleId);
 
-        if(String.valueOf(rolePermissions.get("response_code")).equalsIgnoreCase("200")){
-            List<Map<String, Object>> permissionsFound = mapper.convertValue(rolePermissions.get("response_code"), new TypeReference<>() {});
-            List<String> permissions = permissionsFound.stream()
-                    .map(stringObjectMap -> String.valueOf(stringObjectMap.get("action"))).toList();
-            permissions.forEach(permission -> authorities.add(new SimpleGrantedAuthority(permission.toUpperCase())));
+        try {
+            List<String> roles = Arrays.stream(userRoles.split(",")).toList();
+            String userRolePermissions = String.join(",", roles);
+
+            Map<String, Object> rolePermissions = roleService.searchRolesPermissions(List.of(userRolePermissions));
+
+            if(String.valueOf(rolePermissions.get("response_code")).equalsIgnoreCase("200")){
+                List<Map<String, Object>> permissionsFound = mapper.convertValue(rolePermissions.get("response_code"), new TypeReference<>() {});
+                List<String> permissions = permissionsFound.stream()
+                        .map(stringObjectMap -> String.valueOf(stringObjectMap.get("action"))).toList();
+                permissions.forEach(permission -> authorities.add(new SimpleGrantedAuthority(permission.toUpperCase())));
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage());
         }
 
         return authorities;

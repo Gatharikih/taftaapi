@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -16,6 +17,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 import org.tafta.taftaapi.config.PropConfiguration;
 
+import java.io.File;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -298,5 +303,46 @@ public class Utility {
         }
 
         return unlikeElements;
+    }
+
+    /** Convert File to Base64 String
+     * @param file binary file to encode
+     * @return encoded string
+     * */
+    public static String convertBinaryFileToBase64(File file){
+        try {
+            byte[] fileContent = FileUtils.readFileToByteArray(file);
+            return Base64.getEncoder().encodeToString(fileContent);
+        } catch (Exception e) {
+            log.error(e.getMessage());
+
+            return "Internal error - " + e.getMessage();
+        }
+    }
+
+    /** Convert Base64 String to Binary File
+     * @param encodedString string to decode
+     * @param outputFileName name to give the new file
+     * */
+    public static void convertBase64ToBinaryFile(String encodedString, String outputFileName){
+        try {
+            byte[] decodedBytes = Base64.getDecoder().decode(encodedString);
+            FileUtils.writeByteArrayToFile(new File(outputFileName), decodedBytes);
+        } catch (Exception e) {
+            log.error("Error while decoding " + outputFileName + " - " + e.getMessage());
+        }
+    }
+
+    /** Helper method for rounding Doubles With BigDecimal
+     * @param value value to round off
+     * @param places desired decimal places
+     * */
+    public static String roundOffDecimal(double value, int places) {
+        if (value < 0 || places < 0) throw new IllegalArgumentException();
+
+        BigDecimal bd = new BigDecimal(Double.toString(value));
+        bd = bd.setScale(places, RoundingMode.HALF_UP);
+
+        return bd.toString();
     }
 }

@@ -1,5 +1,11 @@
-application-description: @project.description@
-application-version: @project.version@
+application-description: Apartment Finder API # @project.description@
+application-version: 0.0.1-dev # @project.version@
+spring:
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 5MB
+      max-request-size: 5MB
 server:
   port: ${API_ENV_PORT:8200}
   error:
@@ -16,11 +22,12 @@ app:
     notification: ${API_ENV_SERVICES_NOTIFICATIONS:false}
   config:
     is_app_live: ${API_ENV_LIVE:true}
+    files_path: ${ENV_FILES_PATH:/home/datadrive/files/TAFTA_API/files/}
   scheduler:
     query_delay: ${API_ENV_INTERVAL_QUERY:10000}
   db:
     host: ${API_ENV_PG_HOST:localhost}
-    database: ${API_ENV_PG_DATABASE:rentisha}
+    database: ${API_ENV_PG_DATABASE:tafta_db}
     username: ${API_ENV_PG_USERNAME:postgres}
     password: ${API_ENV_PG_PASSWORD:admin}
     port: ${API_ENV_PG_PORT:5432}

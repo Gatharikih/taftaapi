@@ -9,6 +9,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
+import org.springframework.security.web.access.intercept.FilterSecurityInterceptor;
+import org.springframework.security.web.authentication.AuthenticationFilter;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingResponseWrapper;
@@ -42,15 +45,15 @@ public class CustomOncePerRequestFilter extends OncePerRequestFilter {
         String msg = "Authenticated successfully";
 
         try {
-            Authentication authentication = customAuthenticationManager.authenticateApiKey(request);
-
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-
-            if(authentication.isAuthenticated()){
-                filterChain.doFilter(cachedHttpRequestWrapper, responseWrapper);
-            }else {
-                Utility.markResponseUnauthorised(response);
-            }
+            filterChain.doFilter(cachedHttpRequestWrapper, responseWrapper);
+//            Authentication authentication = customAuthenticationManager.authenticateApiKey(request);
+//            SecurityContextHolder.getContext().setAuthentication(authentication);
+//
+//            if(authentication.isAuthenticated()){
+//                filterChain.doFilter(cachedHttpRequestWrapper, responseWrapper);
+//            }else {
+//                Utility.markResponseUnauthorised(response);
+//            }
         } catch (Exception e) {
             log.error(e.getMessage());
 

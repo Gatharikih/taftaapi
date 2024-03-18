@@ -5,10 +5,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration;
 import org.tafta.taftaapi.repo.DbConnectionsHandler;
 
-@SpringBootApplication(exclude = {UserDetailsServiceAutoConfiguration.class})
+//@SpringBootApplication(exclude = {UserDetailsServiceAutoConfiguration.class})
+@SpringBootApplication
 @Slf4j
 public class TaftaapiApplication {
 	@Autowired

@@ -47,4 +47,7 @@ public class PropConfiguration {
     private boolean isQueryServiceEnabled;
     @Value("${app.services.notification}")
     private boolean isNotificationServiceEnabled;
+
+    @Value("${app.config.files_path}")
+    private String filesPath;
 }

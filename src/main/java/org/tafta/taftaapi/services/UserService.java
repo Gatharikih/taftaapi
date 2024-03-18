@@ -154,7 +154,7 @@ public class UserService {
                 response.put("page_size", listAllUsersResponse.size());
             }else{
                 response.put("response_code", "404");
-                response.put("response_description", "No user found");
+                response.put("response_description", "No users found");
                 response.put("response_data", null);
             }
         } catch (Exception e) {
